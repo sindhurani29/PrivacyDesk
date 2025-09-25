@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Stepper } from '@progress/kendo-react-layout';
 import { Button } from '@progress/kendo-react-buttons';
 import StepRequester, { type Requester } from './StepRequester';
+import StepDetails, { type StepDetailsValue } from './StepDetails';
 
 type StepIndex = 0 | 1 | 2;
 
@@ -11,16 +12,7 @@ const steps: Array<{ label: string }> = [
 	{ label: 'Confirm' }
 ];
 
-// Step components for Details and Confirm remain placeholders
-
-function StepDetails() {
-	return (
-		<div>
-			<h3>Details</h3>
-			<p>Capture request details here.</p>
-		</div>
-	);
-}
+// Step component for Confirm remains a placeholder
 
 function StepConfirm() {
 	return (
@@ -34,6 +26,7 @@ function StepConfirm() {
 export default function Wizard() {
 	const [active, setActive] = useState<StepIndex>(0);
 	const [requester, setRequester] = useState<Requester>({ name: '', email: '', country: '' });
+		const [details, setDetails] = useState<StepDetailsValue>({ type: 'access', notes: '', idProofReceived: false });
 
 	const onStepChange = (e: any) => {
 		const next = Math.max(0, Math.min(steps.length - 1, Number(e.value) || 0)) as StepIndex;
@@ -54,24 +47,33 @@ export default function Wizard() {
 		<div>
 			<Stepper items={steps} value={active} onChange={onStepChange} />
 
-					<div>
-						{active === 0 && (
-							<StepRequester value={requester} onChange={setRequester} />
-						)}
-				{active === 1 && <StepDetails />}
-				{active === 2 && <StepConfirm />}
-			</div>
+							<div>
+								{active === 0 && (
+									<StepRequester value={requester} onChange={setRequester} />
+								)}
+								{active === 1 && (
+									<StepDetails
+										value={details}
+										onChange={setDetails}
+										onBack={handleBack}
+										onNext={handleNext}
+									/>
+								)}
+								{active === 2 && <StepConfirm />}
+							</div>
 
-					<div>
-						<Button onClick={handleBack} disabled={active === 0}>Back</Button>
-						<Button
-							onClick={handleNext}
-							disabled={(active === 0 && !canProceedFromRequester) || active === steps.length - 1}
-							themeColor="primary"
-						>
-							Next
-						</Button>
-					</div>
+							{active !== 1 && (
+								<div>
+									<Button onClick={handleBack} disabled={active === 0}>Back</Button>
+									<Button
+										onClick={handleNext}
+										disabled={(active === 0 && !canProceedFromRequester) || active === steps.length - 1}
+										themeColor="primary"
+									>
+										Next
+									</Button>
+								</div>
+							)}
 		</div>
 	);
 }
