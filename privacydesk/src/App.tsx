@@ -1,6 +1,7 @@
 import { AppBar } from '@progress/kendo-react-layout';
 import { Link, Routes, Route, Navigate } from 'react-router-dom';
 import RequestsPage from './pages/RequestsPage';
+import Wizard from './pages/NewRequest/Wizard';
 
 export default function App() {
   return (
@@ -20,7 +21,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/requests" replace />} />
           <Route path="/dashboard" element={<div>Dashboard (placeholder)</div>} />
           <Route path="/requests" element={<RequestsPage />} />
-          <Route path="/new" element={<div>New Request (placeholder)</div>} />
+          <Route path="/new" element={<Wizard />} />
           <Route path="/settings" element={<div>Settings (placeholder)</div>} />
           <Route path="*" element={<Navigate to="/requests" replace />} />
         </Routes>
