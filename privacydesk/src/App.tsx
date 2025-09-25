@@ -2,7 +2,7 @@ import { AppBar } from '@progress/kendo-react-layout';
 import { Link, Routes, Route, Navigate } from 'react-router-dom';
 import RequestsPage from './pages/RequestsPage';
 import Wizard from './pages/NewRequest/Wizard';
-import CasePage from './pages/CasePage';
+import CasePage from './pages/Case/CasePage';
 
 export default function App() {
   return (

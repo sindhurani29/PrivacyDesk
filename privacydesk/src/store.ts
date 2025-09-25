@@ -9,12 +9,17 @@ export interface Settings {
 export interface DsrRequest extends Request {
   notes?: string;
   idProofReceived?: boolean;
+  notesList: string[];
+  evidence: string[];
+  history: string[];
 }
 
 interface StoreState {
   requests: DsrRequest[];
   settings: Settings;
   addRequest: (input: Omit<DsrRequest, 'id' | 'submittedAt' | 'dueAt' | 'status'> & Partial<Pick<DsrRequest, 'status'>>) => DsrRequest;
+  setOwner: (id: string, owner: string) => void;
+  addNote: (id: string, note: string) => void;
 }
 
 function nextId(existing: { id: string }[]): string {
@@ -25,7 +30,12 @@ function nextId(existing: { id: string }[]): string {
 }
 
 export const useStore = create<StoreState>((set, get) => ({
-  requests: seedRequests as DsrRequest[],
+  requests: (seedRequests as Request[]).map((r) => ({
+    ...(r as any),
+    notesList: [],
+    evidence: [],
+    history: [],
+  })) as DsrRequest[],
   settings: {
     slaDays: {
       access: 30,
@@ -46,8 +56,25 @@ export const useStore = create<StoreState>((set, get) => ({
       status,
       // ensure dueAt provided by caller; can be filled before calling
       dueAt: (input as any).dueAt,
+      notesList: (input as any).notesList ?? [],
+      evidence: (input as any).evidence ?? [],
+      history: (input as any).history ?? [],
     } as DsrRequest;
     set({ requests: [created, ...requests] });
     return created;
+  },
+  setOwner: (id, owner) => {
+    set((state) => ({
+      requests: state.requests.map((r) => (r.id === id ? { ...r, owner } : r)),
+    }));
+  },
+  addNote: (id, note) => {
+    set((state) => ({
+      requests: state.requests.map((r) =>
+        r.id === id
+          ? { ...r, notesList: [note, ...(r.notesList ?? [])], history: [`Note added: ${new Date().toISOString()}`, ...(r.history ?? [])] }
+          : r
+      ),
+    }));
   },
 }));
