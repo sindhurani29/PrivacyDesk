@@ -3,6 +3,7 @@ import { Stepper } from '@progress/kendo-react-layout';
 import { Button } from '@progress/kendo-react-buttons';
 import StepRequester, { type Requester } from './StepRequester';
 import StepDetails, { type StepDetailsValue } from './StepDetails';
+import StepConfirm from './StepConfirm';
 
 type StepIndex = 0 | 1 | 2;
 
@@ -14,24 +15,21 @@ const steps: Array<{ label: string }> = [
 
 // Step component for Confirm remains a placeholder
 
-function StepConfirm() {
-	return (
-		<div>
-			<h3>Confirm</h3>
-			<p>Review and confirm the request.</p>
-		</div>
-	);
-}
+// StepConfirm is imported as a component
 
 export default function Wizard() {
 	const [active, setActive] = useState<StepIndex>(0);
 	const [requester, setRequester] = useState<Requester>({ name: '', email: '', country: '' });
 		const [details, setDetails] = useState<StepDetailsValue>({ type: 'access', notes: '', idProofReceived: false });
 
-	const onStepChange = (e: any) => {
-		const next = Math.max(0, Math.min(steps.length - 1, Number(e.value) || 0)) as StepIndex;
-		setActive(next);
-	};
+		const onStepChange = (e: any) => {
+			const next = Math.max(0, Math.min(steps.length - 1, Number(e.value) || 0)) as StepIndex;
+			// Prevent skipping ahead if requester is not valid yet
+			if (next >= 1 && !canProceedFromRequester) {
+				return; // stay on current step until valid
+			}
+			setActive(next);
+		};
 
 		const handleBack = () => setActive((prev) => Math.max(0, (prev - 1) as StepIndex) as StepIndex);
 		const handleNext = () => setActive((prev) => Math.min(steps.length - 1, (prev + 1) as StepIndex) as StepIndex);
@@ -59,10 +57,12 @@ export default function Wizard() {
 										onNext={handleNext}
 									/>
 								)}
-								{active === 2 && <StepConfirm />}
+										{active === 2 && (
+											<StepConfirm value={{ requester, details }} />
+										)}
 							</div>
 
-							{active !== 1 && (
+							{active !== 1 && active !== 2 && (
 								<div>
 									<Button onClick={handleBack} disabled={active === 0}>Back</Button>
 									<Button
