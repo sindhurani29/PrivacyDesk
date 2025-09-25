@@ -5,6 +5,8 @@ import { Badge } from '@progress/kendo-react-indicators';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
 import { Button } from '@progress/kendo-react-buttons';
 import { TabStrip, TabStripTab } from '@progress/kendo-react-layout';
+import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
+import { TextArea, Input } from '@progress/kendo-react-inputs';
 import SLAWidget from './SLAWidget';
 import NotesPanel from './NotesPanel';
 
@@ -14,7 +16,12 @@ export default function CasePage() {
   const { id } = useParams();
   const req = useStore((s) => s.requests.find((r) => r.id === id));
   const setOwner = useStore((s) => s.setOwner);
+  const closeRequest = useStore((s) => s.closeRequest);
   const [selected, setSelected] = useState(0);
+  const [showClose, setShowClose] = useState(false);
+  const [decision, setDecision] = useState<'done' | 'rejected' | ''>('');
+  const [rationale, setRationale] = useState('');
+  const [citation, setCitation] = useState('');
 
   if (!req) return <div>Case not found.</div>;
 
@@ -50,6 +57,9 @@ export default function CasePage() {
         <div className="k-toolbar-item">
           <Button onClick={handleExport}>Export</Button>
         </div>
+        <div className="k-toolbar-item">
+          <Button themeColor="primary" onClick={() => setShowClose(true)}>Close Request</Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -80,6 +90,44 @@ export default function CasePage() {
           </ul>
         </TabStripTab>
       </TabStrip>
+
+      {showClose && (
+        <Dialog title="Close Request" onClose={() => setShowClose(false)}>
+          <div>
+            <div>
+              Decision
+              <DropDownList
+                data={["done", "rejected"]}
+                value={decision}
+                onChange={(e) => setDecision((e.value as 'done' | 'rejected') ?? '')}
+              />
+            </div>
+            <div>
+              Rationale
+              <TextArea value={rationale} onChange={(e) => setRationale((e.value as string) ?? '')} />
+            </div>
+            <div>
+              Citation URL
+              <Input value={citation} onChange={(e) => setCitation((e.value as string) ?? '')} />
+            </div>
+          </div>
+          <DialogActionsBar>
+            <Button onClick={() => setShowClose(false)}>Cancel</Button>
+            <Button
+              themeColor="primary"
+              disabled={!decision || !rationale.trim() || !citation.trim()}
+              onClick={() => {
+                if (!req) return;
+                if (!decision) return;
+                closeRequest(req.id, decision as 'done' | 'rejected', rationale.trim(), citation.trim());
+                setShowClose(false);
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogActionsBar>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -98,3 +146,4 @@ function statusColor(status: string): 'success' | 'warning' | 'error' | 'info' |
       return undefined;
   }
 }
+
