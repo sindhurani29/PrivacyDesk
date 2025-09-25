@@ -20,6 +20,7 @@ interface StoreState {
   addRequest: (input: Omit<DsrRequest, 'id' | 'submittedAt' | 'dueAt' | 'status'> & Partial<Pick<DsrRequest, 'status'>>) => DsrRequest;
   setOwner: (id: string, owner: string) => void;
   addNote: (id: string, note: string) => void;
+  closeRequest: (id: string, decision: Extract<Status, 'done' | 'rejected'>, rationale: string, citationUrl: string) => void;
 }
 
 function nextId(existing: { id: string }[]): string {
@@ -73,6 +74,22 @@ export const useStore = create<StoreState>((set, get) => ({
       requests: state.requests.map((r) =>
         r.id === id
           ? { ...r, notesList: [note, ...(r.notesList ?? [])], history: [`Note added: ${new Date().toISOString()}`, ...(r.history ?? [])] }
+          : r
+      ),
+    }));
+  },
+  closeRequest: (id, decision, rationale, citationUrl) => {
+    set((state) => ({
+      requests: state.requests.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: decision,
+              history: [
+                `Closed as ${decision} @ ${new Date().toISOString()} | rationale: ${rationale} | citation: ${citationUrl}`,
+                ...(r.history ?? []),
+              ],
+            }
           : r
       ),
     }));
