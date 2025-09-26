@@ -1,8 +1,9 @@
 import { useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useId, useEffect, useRef } from 'react';
 import { useStore } from '../../store';
 import { Badge } from '@progress/kendo-react-indicators';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
+import type { DropDownListHandle } from '@progress/kendo-react-dropdowns';
 import { Button } from '@progress/kendo-react-buttons';
 import { TabStrip, TabStripTab } from '@progress/kendo-react-layout';
 import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
@@ -22,6 +23,15 @@ export default function CasePage() {
   const [decision, setDecision] = useState<'done' | 'rejected' | ''>('');
   const [rationale, setRationale] = useState('');
   const [citation, setCitation] = useState('');
+  const dialogDescId = useId();
+  const decisionRef = useRef<DropDownListHandle | null>(null);
+
+  useEffect(() => {
+    if (showClose) {
+      // Focus the first interactive field when the dialog opens
+      decisionRef.current?.focus();
+    }
+  }, [showClose]);
 
   if (!req) return <div>Case not found.</div>;
 
@@ -37,17 +47,18 @@ export default function CasePage() {
   };
 
   return (
-    <div>
+    <main>
       {/* Header */}
       <div className="k-toolbar k-toolbar-resizable" role="toolbar" aria-label="Case Header">
         <div className="k-toolbar-item">
-          <Badge themeColor={statusColor(req.status)}>{req.status}</Badge>
+          <Badge themeColor={statusColor(req.status)} aria-label={`Status: ${req.status}`} aria-live="polite">{req.status}</Badge>
         </div>
         <div className="k-toolbar-item">
           <DropDownList
             data={OWNER_OPTIONS}
             value={req.owner}
             onChange={(e) => setOwner(req.id, String(e.value))}
+            aria-label="Owner"
           />
         </div>
         <div className="k-toolbar-item">
@@ -55,15 +66,15 @@ export default function CasePage() {
         </div>
         <div className="k-spacer" />
         <div className="k-toolbar-item">
-          <Button onClick={handleExport}>Export</Button>
+          <Button onClick={handleExport} aria-label="Export case as JSON">Export</Button>
         </div>
         <div className="k-toolbar-item">
-          <Button themeColor="primary" onClick={() => setShowClose(true)}>Close Request</Button>
+          <Button themeColor="primary" onClick={() => setShowClose(true)} aria-label="Open Close Request dialog">Close Request</Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <TabStrip selected={selected} onSelect={(e) => setSelected(e.selected)}>
+      <TabStrip selected={selected} onSelect={(e) => setSelected(e.selected)} aria-label="Case content">
         <TabStripTab title="Overview">
           <div>
             <h3>Overview</h3>
@@ -92,27 +103,37 @@ export default function CasePage() {
       </TabStrip>
 
       {showClose && (
-        <Dialog title="Close Request" onClose={() => setShowClose(false)}>
-          <div>
+        <Dialog title="Close Request" onClose={() => setShowClose(false)} aria-describedby={dialogDescId}>
+          <div id={dialogDescId}>
             <div>
-              Decision
+              <span id="close-decision-label">Decision</span>
               <DropDownList
+                aria-labelledby="close-decision-label"
                 data={["done", "rejected"]}
                 value={decision}
                 onChange={(e) => setDecision((e.value as 'done' | 'rejected') ?? '')}
+                ref={decisionRef}
               />
             </div>
             <div>
-              Rationale
-              <TextArea value={rationale} onChange={(e) => setRationale((e.value as string) ?? '')} />
+              <span id="close-rationale-label">Rationale</span>
+              <TextArea
+                aria-labelledby="close-rationale-label"
+                value={rationale}
+                onChange={(e) => setRationale((e.value as string) ?? '')}
+              />
             </div>
             <div>
-              Citation URL
-              <Input value={citation} onChange={(e) => setCitation((e.value as string) ?? '')} />
+              <span id="close-citation-label">Citation URL</span>
+              <Input
+                aria-labelledby="close-citation-label"
+                value={citation}
+                onChange={(e) => setCitation((e.value as string) ?? '')}
+              />
             </div>
           </div>
           <DialogActionsBar>
-            <Button onClick={() => setShowClose(false)}>Cancel</Button>
+            <Button onClick={() => setShowClose(false)} aria-label="Cancel closing request">Cancel</Button>
             <Button
               themeColor="primary"
               disabled={!decision || !rationale.trim() || !citation.trim()}
@@ -122,13 +143,14 @@ export default function CasePage() {
                 closeRequest(req.id, decision as 'done' | 'rejected', rationale.trim(), citation.trim());
                 setShowClose(false);
               }}
+              aria-label="Confirm close request"
             >
               Confirm
             </Button>
           </DialogActionsBar>
         </Dialog>
       )}
-    </div>
+    </main>
   );
 }
 

@@ -13,9 +13,9 @@ export default function SLAWidget({ dueAt, maxDays = 30 }: { dueAt: string; maxD
   const value = Math.max(0, Math.min(maxDays, daysLeft));
 
   return (
-    <div>
-      <Badge themeColor={status}>{label}</Badge>
-      <ProgressBar min={0} max={maxDays} value={value} />
-    </div>
+    <section aria-label="SLA status">
+      <Badge themeColor={status} aria-live="polite">{label}</Badge>
+      <ProgressBar min={0} max={maxDays} value={value} aria-label={`Days remaining: ${Math.max(0, daysLeft)}`} />
+    </section>
   );
 }
