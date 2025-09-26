@@ -55,12 +55,13 @@ export default function FiltersBar(props: FiltersBarProps) {
 	} = props;
 
 	return (
-		<Toolbar aria-label="Request filters toolbar">
+		<Toolbar aria-label="Request filters toolbar" role="toolbar">
 			<ToolbarItem>
 				<div>
 					<Label editorId="filter-type">Type</Label>
 					<DropDownList
 						id="filter-type"
+						aria-label="Filter by type"
 						data={TYPE_OPTIONS}
 						value={type}
 						onChange={(e) => setType(e.value as FilterType)}
@@ -73,6 +74,7 @@ export default function FiltersBar(props: FiltersBarProps) {
 					<Label editorId="filter-status">Status</Label>
 					<DropDownList
 						id="filter-status"
+						aria-label="Filter by status"
 						data={STATUS_OPTIONS}
 						value={status}
 						onChange={(e) => setStatus(e.value as FilterStatus)}
@@ -85,6 +87,7 @@ export default function FiltersBar(props: FiltersBarProps) {
 					<Label editorId="filter-owner">Owner</Label>
 					<MultiSelect
 						id="filter-owner"
+						aria-label="Filter by owner"
 						data={owners}
 						value={owner}
 						onChange={(e) => setOwner((e.value as string[]) ?? [])}
@@ -100,6 +103,7 @@ export default function FiltersBar(props: FiltersBarProps) {
 					<Label editorId="filter-from">From</Label>
 					<DatePicker
 						id="filter-from"
+						aria-label="Filter from date"
 						value={dateFrom ?? null}
 						onChange={(e) => setDateFrom((e.value as Date) ?? null)}
 					/>
@@ -111,6 +115,7 @@ export default function FiltersBar(props: FiltersBarProps) {
 					<Label editorId="filter-to">To</Label>
 					<DatePicker
 						id="filter-to"
+						aria-label="Filter to date"
 						value={dateTo ?? null}
 						onChange={(e) => setDateTo((e.value as Date) ?? null)}
 					/>

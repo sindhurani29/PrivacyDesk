@@ -22,7 +22,8 @@ export default function StepDetails({ value, onChange, onBack, onNext }: StepDet
 	return (
 		<div>
 			<div>
-				<DropDownList
+					<DropDownList
+						aria-label="Request type"
 					data={TYPES}
 					value={value.type}
 					onChange={(e) => onChange({ ...value, type: e.value as RequestType })}
@@ -31,6 +32,7 @@ export default function StepDetails({ value, onChange, onBack, onNext }: StepDet
 
 			<div>
 				<TextArea
+					aria-label="Additional notes"
 					value={value.notes}
 					onChange={(e) => onChange({ ...value, notes: (e.value as string) ?? '' })}
 					placeholder="Notes"
@@ -39,10 +41,11 @@ export default function StepDetails({ value, onChange, onBack, onNext }: StepDet
 
 			<div>
 				<Switch
+					aria-labelledby="id-proof-label"
 					checked={value.idProofReceived}
 					onChange={(e) => onChange({ ...value, idProofReceived: Boolean(e.value) })}
 				/>
-				<span>ID proof received?</span>
+				<span id="id-proof-label">ID proof received?</span>
 			</div>
 
 			<div>

@@ -38,8 +38,10 @@ export default function StepConfirm({ value }: StepConfirmProps) {
 
 	return (
 		<div>
-			<pre>{JSON.stringify(value, null, 2)}</pre>
-			<Button themeColor="primary" onClick={handleCreate} disabled={!requesterValid}>Create</Button>
+			<pre aria-label="Request summary JSON">{JSON.stringify(value, null, 2)}</pre>
+			<Button themeColor="primary" onClick={handleCreate} disabled={!requesterValid} aria-label="Create request">
+				Create
+			</Button>
 		</div>
 	);
 }

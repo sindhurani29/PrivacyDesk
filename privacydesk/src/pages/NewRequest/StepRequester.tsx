@@ -16,6 +16,7 @@ export default function StepRequester({ value, onChange }: StepRequesterProps) {
 		<div>
 			<div>
 				<Input
+					aria-label="Requester name"
 					value={value.name}
 					onChange={(e) => onChange({ ...value, name: (e.value as string) ?? '' })}
 					placeholder="Name"
@@ -23,6 +24,7 @@ export default function StepRequester({ value, onChange }: StepRequesterProps) {
 			</div>
 			<div>
 				<Input
+					aria-label="Requester email"
 					value={value.email}
 					onChange={(e) => onChange({ ...value, email: (e.value as string) ?? '' })}
 					placeholder="Email"
@@ -31,6 +33,7 @@ export default function StepRequester({ value, onChange }: StepRequesterProps) {
 			</div>
 			<div>
 				<Input
+					aria-label="Requester country"
 					value={value.country ?? ''}
 					onChange={(e) => onChange({ ...value, country: (e.value as string) ?? '' })}
 					placeholder="Country (optional)"
