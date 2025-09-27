@@ -1,18 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Grid, GridColumn as Column } from '@progress/kendo-react-grid';
 import { Button } from '@progress/kendo-react-buttons';
 import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
-import type { DsrRequest } from '../../store';
+import type { DsrRequest } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
-
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { 
-    month: 'numeric', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
-}
+import { formatDate } from '../../lib/date';
 
 function StatusPill({ status }: { status: DsrRequest['status'] }) {
   const cls = status === 'done' ? 'green' : status === 'rejected' ? 'red' : status === 'waiting' ? 'yellow' : status === 'in_progress' ? 'blue' : 'gray';
@@ -20,12 +12,66 @@ function StatusPill({ status }: { status: DsrRequest['status'] }) {
   return <span className={`pill ${cls}`}>{label}</span>;
 }
 
-export default function RequestGrid({ data }: { data: DsrRequest[] }) {
+export default function RequestGrid({ 
+  data, 
+  onPaginationChange 
+}: { 
+  data: DsrRequest[];
+  onPaginationChange?: (info: { currentPage: number; totalPages: number; totalItems: number; pageSize: number }) => void;
+}) {
   const [page, setPage] = useState({ skip: 0, take: 10 });
   const [sort, setSort] = useState<any[]>([{ field: 'submittedAt', dir: 'desc' }]);
   const [preview, setPreview] = useState<DsrRequest | null>(null);
   const AnyColumn: any = Column;
   const navigate = useNavigate();
+
+  const handlePageChange = (e: any) => {
+    setPage(e.page);
+  };
+
+  const handleSortChange = (e: any) => {
+    setSort(e.sort);
+  };
+
+  // Sort data based on current sort settings
+  const sortedData = useMemo(() => {
+    if (!sort.length) return data;
+    
+    return [...data].sort((a, b) => {
+      for (const sortField of sort) {
+        const aValue = sortField.field.split('.').reduce((obj: any, key: string) => obj?.[key], a);
+        const bValue = sortField.field.split('.').reduce((obj: any, key: string) => obj?.[key], b);
+        
+        if (aValue < bValue) return sortField.dir === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortField.dir === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [data, sort]);
+
+  // Get paginated data
+  const paginatedData = useMemo(() => {
+    return sortedData.slice(page.skip, page.skip + page.take);
+  }, [sortedData, page]);
+
+  const totalItems = data.length;
+  const totalPages = Math.ceil(totalItems / page.take);
+  const currentPage = Math.floor(page.skip / page.take) + 1;
+
+  // Reset pagination when data changes (e.g., when filters are applied)
+  useEffect(() => {
+    setPage(prevPage => ({ ...prevPage, skip: 0 }));
+  }, [data.length]);
+
+  // Notify parent about pagination changes
+  useEffect(() => {
+    onPaginationChange?.({
+      currentPage,
+      totalPages,
+      totalItems,
+      pageSize: page.take
+    });
+  }, [currentPage, totalPages, totalItems, page.take, onPaginationChange]);
 
   // Inline Eye icon to avoid reliance on Kendo font icons which may be blocked/missing
   const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -53,14 +99,21 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
     <>
       <Grid
         className="pd-grid"
-        data={data}
+        data={paginatedData}
         skip={page.skip}
         take={page.take}
-        pageable
+        total={totalItems}
+        pageable={{
+          buttonCount: 5,
+          info: true,
+          type: 'numeric',
+          pageSizes: [5, 10, 20, 50],
+          previousNext: true
+        }}
         sortable
         sort={sort}
-        onPageChange={(e) => setPage(e.page)}
-        onSortChange={(e) => setSort(e.sort)}
+        onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
         onRowClick={(e) => navigate(`/case/${e.dataItem.id}`)}
         style={{ fontSize: 13, lineHeight: 1.3 }}
       >
@@ -84,11 +137,11 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
             <th>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#64748b', fontWeight: 600 }}>
                 Submitted
-                <span aria-hidden="true" style={{ color: '#111827' }}>{(sort.find(s => s.field === 'submittedAt')?.dir ?? 'desc') === 'desc' ? '↓' : '↑'}</span>
+        <span aria-hidden="true" style={{ color: '#111827' }}>{(sort.find(s => s.field === 'submittedAt')?.dir ?? 'desc') === 'desc' ? '↓' : '↑'}</span>
               </span>
             </th>
           )}
-          cell={(p: any) => <td>{formatDate(p.dataItem.submittedAt)}</td>}
+      cell={(p: any) => <td>{formatDate(p.dataItem.submittedAt)}</td>}
         />
         <AnyColumn field="dueAt" title="Due" cell={(p: any) => {
           const now = new Date();
@@ -98,9 +151,9 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
           const label = over ? `Overdue ${Math.abs(days)}d` : `Due in ${days}d`;
           return <td><span className={`pill ${over ? 'red' : days <= 3 ? 'yellow' : 'gray'}`}>{label}</span></td>;
         }} />
-        <AnyColumn field="status" title="Status" cell={(p: any) => <td><StatusPill status={p.dataItem.status} /></td>} />
+  <AnyColumn field="status" title="Status" cell={(p: any) => <td><StatusPill status={p.dataItem.status} /></td>} />
         <Column field="owner" title="Owner" />
-        <AnyColumn title="Actions" cell={(p: any) => (
+    <AnyColumn title="Actions" cell={(p: any) => (
           <td>
             <Button
               fillMode="outline"
@@ -110,16 +163,16 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPreview(p.dataItem); }}
               style={{ padding: '4px 8px' }}
             >
-              <EyeIcon />
+      <EyeIcon />
             </Button>
           </td>
         )} />
       </Grid>
 
-      {data.length === 0 && null}
+  {data.length === 0 && null}
 
       {preview && (
-        <Dialog title={`Request ${preview.id}`} onClose={() => setPreview(null)}>
+  <Dialog title={`Request ${preview.id}`} onClose={() => setPreview(null)}>
           <pre>{JSON.stringify(preview, null, 2)}</pre>
           <DialogActionsBar>
             <Button onClick={() => setPreview(null)}>Close</Button>

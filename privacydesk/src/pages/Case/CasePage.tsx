@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useState, useId, useEffect, useRef } from 'react';
-import { useStore } from '../../store';
-import { Badge } from '@progress/kendo-react-indicators';
+import { useRequestsStore } from '../../store/requests';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
 import type { DropDownListHandle } from '@progress/kendo-react-dropdowns';
 import { Button } from '@progress/kendo-react-buttons';
@@ -9,22 +8,26 @@ import { TabStrip, TabStripTab } from '@progress/kendo-react-layout';
 import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
 import { TextArea, Input } from '@progress/kendo-react-inputs';
 import SLAWidget from './SLAWidget';
+import { formatDateTime } from '../../lib/date';
 import NotesPanel from './NotesPanel';
+import NucliaAssistant from './NucliaAssistant';
+import PreviewWindow from '../Runbook/PreviewWindow';
 
 const OWNER_OPTIONS = ['Alex', 'Priya', 'Jordan', 'Sam', 'Taylor', 'Unassigned'];
 
 export default function CasePage() {
   const { id } = useParams();
-  const req = useStore((s) => s.requests.find((r) => r.id === id));
-  const setOwner = useStore((s) => s.setOwner);
-  const closeRequest = useStore((s) => s.closeRequest);
+  const { requests, setOwner, closeRequest, load } = useRequestsStore();
+  const req = requests.find((r) => r.id === id);
   const [selected, setSelected] = useState(0);
   const [showClose, setShowClose] = useState(false);
   const [decision, setDecision] = useState<'done' | 'rejected' | ''>('');
   const [rationale, setRationale] = useState('');
   const [citation, setCitation] = useState('');
+  const [policyHelperExpanded, setPolicyHelperExpanded] = useState(false);
   const dialogDescId = useId();
   const decisionRef = useRef<DropDownListHandle | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     if (showClose) {
@@ -35,72 +38,306 @@ export default function CasePage() {
 
   if (!req) return <div>Case not found.</div>;
 
-  const handleExport = () => {
-    // Minimal export: download the JSON as a file
-    const blob = new Blob([JSON.stringify(req, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${req.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Ensure data is loaded when landing directly on a case route
+  useEffect(() => { load(); }, [load]);
+
+  // Calculate SLA progress
+  const calculateSLAProgress = () => {
+    const submitted = new Date(req.submittedAt);
+    const due = new Date(req.dueAt);
+    const now = new Date();
+    const totalTime = due.getTime() - submitted.getTime();
+    const elapsedTime = now.getTime() - submitted.getTime();
+    const percentage = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
+    return Math.round(percentage);
   };
 
   return (
-    <main>
+    <main className="pd-page">
+      <div aria-label="Breadcrumb" style={{ marginBottom: 16, fontSize: 14, color: '#6b7280' }}>
+        <a href="/dashboard" style={{ color: '#3b82f6', textDecoration: 'none' }}>Dashboard</a> / 
+        <a href="/requests" style={{ color: '#3b82f6', textDecoration: 'none', margin: '0 4px' }}>Requests</a> / 
+        <span style={{ color: '#374151' }}>Case {req.id}</span>
+      </div>
+
       {/* Header */}
-      <div className="k-toolbar k-toolbar-resizable" role="toolbar" aria-label="Case Header">
-        <div className="k-toolbar-item">
-          <Badge themeColor={statusColor(req.status)} aria-label={`Status: ${req.status}`} aria-live="polite">{req.status}</Badge>
+      <div className="k-toolbar k-toolbar-resizable pd-card" role="toolbar" aria-label="Case Header" style={{ padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+        <h1 style={{ 
+          fontSize: 24, 
+          fontWeight: 700, 
+          color: '#374151', 
+          margin: 0, 
+          flex: '0 1 auto',
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: '300px'
+        }}>{req.id}</h1>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 0 auto' }}>
+          <span className={`pill ${req.type === 'export' ? 'green' : req.type === 'access' ? 'blue' : req.type === 'delete' ? 'red' : 'yellow'}`}>
+            {req.type}
+          </span>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '4px 8px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#ffffff',
+              backgroundColor: getStatusColor(req.status),
+              textTransform: 'capitalize',
+              minWidth: '60px',
+              height: '24px'
+            }}
+            aria-label={`Status: ${req.status}`}
+            aria-live="polite"
+          >
+            {req.status === 'in_progress' ? 'In Progress' : req.status}
+          </div>
         </div>
-        <div className="k-toolbar-item">
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 0 auto' }}>
+          <span style={{ fontSize: 14, color: '#6b7280' }}>Owner:</span>
           <DropDownList
             data={OWNER_OPTIONS}
             value={req.owner}
             onChange={(e) => setOwner(req.id, String(e.value))}
             aria-label="Owner"
+            style={{ minWidth: 120 }}
           />
         </div>
-        <div className="k-toolbar-item">
+
+        <div style={{ flex: '0 0 auto' }}>
           <SLAWidget dueAt={req.dueAt} />
         </div>
-        <div className="k-spacer" />
-        <div className="k-toolbar-item">
-          <Button onClick={handleExport} aria-label="Export case as JSON">Export</Button>
-        </div>
-        <div className="k-toolbar-item">
-          <Button themeColor="primary" onClick={() => setShowClose(true)} aria-label="Open Close Request dialog">Close Request</Button>
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, flex: '0 0 auto' }}>
+          <Button onClick={() => setShowExport(true)} aria-label="Export case">Export</Button>
+          <Button themeColor="primary" onClick={() => setShowClose(true)} aria-label="Open Close Request dialog">
+            Close Request
+          </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <TabStrip selected={selected} onSelect={(e) => setSelected(e.selected)} aria-label="Case content">
-        <TabStripTab title="Overview">
-          <div>
-            <h3>Overview</h3>
-            <div>Requester: {req.requester.name ?? ''} ({req.requester.email})</div>
-            <div>Type: {req.type}</div>
-            <div>Submitted: {new Date(req.submittedAt).toLocaleString()}</div>
+      {/* Main Content */}
+      <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ flex: 1 }}>
+          <TabStrip selected={selected} onSelect={(e) => setSelected(e.selected)} aria-label="Case content" className="pd-card" style={{ padding: 0 }}>
+            <TabStripTab title="Overview">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: 24 }}>
+                {/* Requester Information */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Requester Information</h3>
+                  <div style={{ display: 'grid', gap: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>Name</div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>{req.requester.name || 'Not provided'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>Email</div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>{req.requester.email}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>Country</div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>{req.requester.country || 'Not specified'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SLA Progress */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>SLA Progress</h3>
+                  <div style={{ display: 'grid', gap: 16 }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>Time Elapsed</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>{calculateSLAProgress()}%</span>
+                      </div>
+                      <div style={{ width: '100%', height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                        <div 
+                          style={{ 
+                            width: `${calculateSLAProgress()}%`, 
+                            height: '100%', 
+                            backgroundColor: '#3b82f6',
+                            transition: 'width 0.3s ease'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>
+                        Submitted: {formatDateTime(req.submittedAt)}
+                      </div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>
+                        Due: {formatDateTime(req.dueAt)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabStripTab>
+            
+            <TabStripTab title={`Notes (${req.notes?.length || 0})`}>
+              <div style={{ padding: 24 }}>
+                <NotesPanel id={req.id} />
+              </div>
+            </TabStripTab>
+            
+            <TabStripTab title={`Evidence (${req.attachments?.length || 0})`}>
+              <div style={{ padding: 24 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Attached Files</h3>
+                {(req.attachments ?? []).length > 0 ? (
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {(req.attachments ?? []).map((f, i) => (
+                      <div key={f.id ?? i} style={{ 
+                        padding: 12, 
+                        backgroundColor: '#f8fafc', 
+                        borderRadius: 8, 
+                        fontSize: 14,
+                        color: '#374151',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        📎 {f.name}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#6b7280', fontSize: 14, fontStyle: 'italic' }}>No evidence files attached</p>
+                )}
+              </div>
+            </TabStripTab>
+            
+            <TabStripTab title="History">
+              <div style={{ padding: 24 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Request History</h3>
+                {(req.history ?? []).length > 0 ? (
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {(req.history ?? []).map((h, i) => (
+                      <div key={i} style={{ 
+                        padding: 12, 
+                        backgroundColor: '#f8fafc', 
+                        borderRadius: 8, 
+                        fontSize: 14,
+                        borderLeft: '3px solid #3b82f6'
+                      }}>
+                        <div style={{ fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+                          {h.action}{h.details ? `: ${h.details}` : ''}
+                        </div>
+                        <div style={{ color: '#6b7280', fontSize: 13 }}>
+                          {formatDateTime(h.at)} • {h.who || 'System'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#6b7280', fontSize: 14, fontStyle: 'italic' }}>No history available</p>
+                )}
+              </div>
+            </TabStripTab>
+            
+            <TabStripTab title="Export">
+              <div style={{ padding: 24 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Export Case Data</h3>
+                <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>
+                  Export all case information including notes, evidence, and history for external review or archival.
+                </p>
+                <Button 
+                  onClick={() => setShowExport(true)}
+                  themeColor="primary"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Open Export Preview
+                </Button>
+              </div>
+            </TabStripTab>
+          </TabStrip>
+        </div>
+
+        {/* Policy Helper Sidebar */}
+        {policyHelperExpanded ? (
+          <div 
+            className="pd-card" 
+            style={{ 
+              width: '400px',
+              transition: 'all 0.3s ease',
+              height: 'fit-content'
+            }}
+          >
+            <div style={{ padding: 16, borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h4 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#374151' }}>Policy Helper</h4>
+              <button
+                onClick={() => setPolicyHelperExpanded(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 4,
+                  borderRadius: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 16,
+                  color: '#6b7280',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Collapse"
+              >
+                →
+              </button>
+            </div>
+            <div style={{ padding: 16 }}>
+              <NucliaAssistant />
+            </div>
           </div>
-        </TabStripTab>
-        <TabStripTab title="Notes">
-          <NotesPanel id={req.id} />
-        </TabStripTab>
-        <TabStripTab title="Evidence">
-          <ul>
-            {(req.evidence ?? []).map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </ul>
-        </TabStripTab>
-        <TabStripTab title="History">
-          <ul>
-            {(req.history ?? []).map((h, i) => (
-              <li key={i}>{h}</li>
-            ))}
-          </ul>
-        </TabStripTab>
-      </TabStrip>
+        ) : (
+          <div
+            style={{
+              position: 'fixed',
+              right: 16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1000,
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <button
+              onClick={() => setPolicyHelperExpanded(true)}
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px 0 0 8px',
+                cursor: 'pointer',
+                padding: '12px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 16,
+                color: '#374151',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                transition: 'all 0.2s ease',
+                height: '60px',
+                width: '40px'
+              }}
+              title="Expand Policy Helper"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc';
+                e.currentTarget.style.transform = 'translateX(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffffff';
+                e.currentTarget.style.transform = 'translateX(0)';
+              }}
+            >
+              ←
+            </button>
+          </div>
+        )}
+      </div>
 
       {showClose && (
         <Dialog title="Close Request" onClose={() => setShowClose(false)} aria-describedby={dialogDescId}>
@@ -150,22 +387,41 @@ export default function CasePage() {
           </DialogActionsBar>
         </Dialog>
       )}
+
+      <PreviewWindow
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        data={{
+          id: req.id,
+          type: req.type,
+          status: req.status,
+          owner: req.owner,
+          requester: req.requester,
+          submittedAt: req.submittedAt,
+          dueAt: req.dueAt,
+          notesList: req.notes?.map(n => `${formatDateTime(n.at)} • ${n.who}: ${n.text}`) ?? [],
+          evidence: req.attachments?.map(a => a.name) ?? [],
+          history: req.history?.map(h => `${formatDateTime(h.at)} • ${h.action}${h.details ? `: ${h.details}` : ''}`) ?? [],
+        }}
+        title={`Export ${req.id}`}
+      />
     </main>
   );
 }
 
-function statusColor(status: string): 'success' | 'warning' | 'error' | 'info' | undefined {
+function getStatusColor(status: string): string {
   switch (status) {
     case 'done':
-      return 'success';
+      return '#22c55e'; // Green
     case 'in_progress':
-      return 'warning';
+      return '#f59e0b'; // Orange/Amber
     case 'rejected':
-      return 'error';
+      return '#ef4444'; // Red
     case 'waiting':
-      return 'info';
+      return '#3b82f6'; // Blue
+    case 'new':
+      return '#8b5cf6'; // Purple
     default:
-      return undefined;
+      return '#6b7280'; // Gray
   }
 }
-
