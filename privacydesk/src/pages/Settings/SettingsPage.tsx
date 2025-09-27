@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { NumericTextBox } from '@progress/kendo-react-inputs';
 import { Input, TextArea } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { useRequestsStore } from '../../store/requests';
@@ -14,6 +15,10 @@ export default function SettingsPage() {
     return localStorage.getItem('VITE_NUCLIA_KB') || import.meta.env.VITE_NUCLIA_KB || '';
   });
 
+  // Track changes for unsaved state
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalSettings, setOriginalSettings] = useState(settings);
+
   useEffect(() => { 
     load(); 
   }, [load]);
@@ -21,16 +26,34 @@ export default function SettingsPage() {
   useEffect(() => {
     setSlaDays(settings.slaDays);
     setOwners(settings.owners);
+    setOriginalSettings(settings);
     if (settings.templates) {
       setTemplates(settings.templates);
     }
+    setHasUnsavedChanges(false);
   }, [settings]);
 
-  const handleSlaChange = (type: keyof typeof slaDays, value: string) => {
-    const numValue = parseInt(value) || 30;
+  // Check for changes
+  useEffect(() => {
+    const currentState = {
+      slaDays,
+      owners,
+      templates
+    };
+    const originalState = {
+      slaDays: originalSettings.slaDays,
+      owners: originalSettings.owners,
+      templates: originalSettings.templates || 'Thank you for your request. We will process it within the required timeframe.'
+    };
+    
+    const hasChanges = JSON.stringify(currentState) !== JSON.stringify(originalState);
+    setHasUnsavedChanges(hasChanges);
+  }, [slaDays, owners, templates, originalSettings]);
+
+  const handleSlaChange = (type: keyof typeof slaDays, value: number | null) => {
+    const numValue = value || 30;
     const newSlaDays = { ...slaDays, [type]: numValue };
     setSlaDays(newSlaDays);
-    saveSettings({ slaDays: newSlaDays });
   };
 
   const handleAddOwner = () => {
@@ -38,19 +61,16 @@ export default function SettingsPage() {
       const newOwners = [...owners, newOwner.trim()];
       setOwners(newOwners);
       setNewOwner('');
-      saveSettings({ owners: newOwners });
     }
   };
 
   const handleRemoveOwner = (ownerToRemove: string) => {
     const newOwners = owners.filter(owner => owner !== ownerToRemove);
     setOwners(newOwners);
-    saveSettings({ owners: newOwners });
   };
 
   const handleTemplatesChange = (value: string) => {
     setTemplates(value);
-    saveSettings({ templates: value });
   };
 
   const handleNucliaKBChange = (value: string) => {
@@ -63,17 +83,61 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveChanges = async () => {
+    await saveSettings({ 
+      slaDays, 
+      owners, 
+      templates 
+    });
+    setHasUnsavedChanges(false);
+  };
+
+  const handleDiscardChanges = () => {
+    setSlaDays(originalSettings.slaDays);
+    setOwners(originalSettings.owners);
+    setTemplates(originalSettings.templates || 'Thank you for your request. We will process it within the required timeframe.');
+    setHasUnsavedChanges(false);
+  };
+
   const activeOwners = [...new Set(requests.map(r => r.owner).filter(Boolean))].length;
   const totalRequests = requests.length;
   const lastUpdated = new Date().toLocaleDateString();
 
   return (
     <div className="pd-page">
-      <div style={{ marginBottom: 24 }}>
-        <div className="muted" style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Settings</div>
-        <h1 className="h1" style={{ marginBottom: 4 }}>Settings</h1>
-        <p className="muted">Configure SLA policies, team members, and system preferences</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div>
+          <div className="muted" style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Settings</div>
+          <h1 className="h1" style={{ marginBottom: 4 }}>Settings</h1>
+          <p className="muted">Configure SLA policies, team members, and system preferences</p>
+        </div>
+        {hasUnsavedChanges && (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button onClick={handleDiscardChanges}>
+              Discard Changes
+            </Button>
+            <Button onClick={handleSaveChanges} themeColor="primary">
+              Save Changes
+            </Button>
+          </div>
+        )}
       </div>
+
+      {hasUnsavedChanges && (
+        <div style={{ 
+          padding: 12, 
+          marginBottom: 24, 
+          backgroundColor: '#fef3c7', 
+          border: '1px solid #f59e0b', 
+          borderRadius: 6,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <span style={{ color: '#92400e', fontSize: 14 }}>⚠️ You have unsaved changes</span>
+          <span style={{ color: '#6b7280', fontSize: 14 }}>Remember to save your changes before navigating away from this page.</span>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gap: 24 }}>
         {/* SLA Configuration */}
@@ -85,10 +149,12 @@ export default function SettingsPage() {
             <div>
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Access Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Input
-                  value={String(slaDays.access)}
-                  onChange={(e) => handleSlaChange('access', e.value as string)}
+                <NumericTextBox
+                  value={slaDays.access}
+                  onChange={(e) => handleSlaChange('access', e.value)}
                   style={{ width: 80 }}
+                  min={1}
+                  max={365}
                 />
                 <span style={{ color: '#6b7280', fontSize: 14 }}>days</span>
               </div>
@@ -96,10 +162,12 @@ export default function SettingsPage() {
             <div>
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Delete Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Input
-                  value={String(slaDays.delete)}
-                  onChange={(e) => handleSlaChange('delete', e.value as string)}
+                <NumericTextBox
+                  value={slaDays.delete}
+                  onChange={(e) => handleSlaChange('delete', e.value)}
                   style={{ width: 80 }}
+                  min={1}
+                  max={365}
                 />
                 <span style={{ color: '#6b7280', fontSize: 14 }}>days</span>
               </div>
@@ -107,10 +175,12 @@ export default function SettingsPage() {
             <div>
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Export Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Input
-                  value={String(slaDays.export)}
-                  onChange={(e) => handleSlaChange('export', e.value as string)}
+                <NumericTextBox
+                  value={slaDays.export}
+                  onChange={(e) => handleSlaChange('export', e.value)}
                   style={{ width: 80 }}
+                  min={1}
+                  max={365}
                 />
                 <span style={{ color: '#6b7280', fontSize: 14 }}>days</span>
               </div>
@@ -118,10 +188,12 @@ export default function SettingsPage() {
             <div>
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Correct Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Input
-                  value={String(slaDays.correct)}
-                  onChange={(e) => handleSlaChange('correct', e.value as string)}
+                <NumericTextBox
+                  value={slaDays.correct}
+                  onChange={(e) => handleSlaChange('correct', e.value)}
                   style={{ width: 80 }}
+                  min={1}
+                  max={365}
                 />
                 <span style={{ color: '#6b7280', fontSize: 14 }}>days</span>
               </div>
