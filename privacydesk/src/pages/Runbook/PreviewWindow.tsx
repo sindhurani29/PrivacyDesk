@@ -1,4 +1,4 @@
-import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
+import { Window } from '@progress/kendo-react-dialogs';
 import { Button } from '@progress/kendo-react-buttons';
 import { useId } from 'react';
 
@@ -66,14 +66,8 @@ export default function PreviewWindow({ open, onClose, title = 'Export Preview',
 
 	return (
 		<>
-			{open && (
-				<Dialog
-					title={title}
-					onClose={onClose}
-					minWidth={600}
-					aria-labelledby={dialogLabelId}
-					aria-describedby={dialogDescId}
-				>
+					{open && (
+						<Window title={title} onClose={onClose} initialWidth={800} initialHeight={600} aria-labelledby={dialogLabelId} aria-describedby={dialogDescId}>
 					<article aria-labelledby={summaryTitleId}>
 						{/* Dialog accessible name */}
 						<h2 id={dialogLabelId} style={{ display: 'none' }}>{title}</h2>
@@ -131,7 +125,7 @@ export default function PreviewWindow({ open, onClose, title = 'Export Preview',
 						<h3>JSON</h3>
 						<pre aria-label="Deterministic JSON export">{stableStringify(data)}</pre>
 					</article>
-					<DialogActionsBar>
+								<div className="k-actions k-actions-end" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
 						<Button onClick={handleDownload} aria-label="Download case as JSON" autoFocus>
 							Download JSON
 						</Button>
@@ -141,8 +135,8 @@ export default function PreviewWindow({ open, onClose, title = 'Export Preview',
 						<Button onClick={onClose} aria-label="Close export preview">
 							Close
 						</Button>
-					</DialogActionsBar>
-				</Dialog>
+								</div>
+							</Window>
 			)}
 		</>
 	);

@@ -1,7 +1,4 @@
-import { Button } from '@progress/kendo-react-buttons';
-import { useNavigate } from 'react-router-dom';
 import type { RequestType } from '../../types';
-import { useStore } from '../../store';
 
 export interface StepConfirmValue {
 	requester: { name: string; email: string; country?: string };
@@ -13,35 +10,42 @@ export interface StepConfirmProps {
 }
 
 export default function StepConfirm({ value }: StepConfirmProps) {
-	const navigate = useNavigate();
-	const addRequest = useStore((s) => s.addRequest);
-	const slaDays = useStore((s) => s.settings.slaDays);
-	const requesterValid = value.requester.name.trim() && /.+@.+\..+/.test(value.requester.email.trim());
-
-	const handleCreate = () => {
-		const { requester, details } = value;
-		const days = slaDays[details.type] ?? 30;
-		const due = new Date();
-		due.setDate(due.getDate() + days);
-
-		const created = addRequest({
-			type: details.type,
-			requester: { email: requester.email, name: requester.name, country: requester.country },
-			dueAt: due.toISOString(),
-			owner: 'Unassigned',
-			notes: details.notes,
-			idProofReceived: details.idProofReceived,
-		} as any);
-
-		navigate(`/case/${created.id}`);
-	};
-
+	const { requester, details } = value;
 	return (
-		<div>
-			<pre aria-label="Request summary JSON">{JSON.stringify(value, null, 2)}</pre>
-			<Button themeColor="primary" onClick={handleCreate} disabled={!requesterValid} aria-label="Create request">
-				Create
-			</Button>
+		<div className="pd-card" style={{ padding: 16 }}>
+			<div style={{ marginBottom: 16 }}>
+				<div className="h2" style={{ margin: 0 }}>Review & Confirm</div>
+				<p className="muted">Review all information before creating</p>
+			</div>
+
+			<section style={{ marginBottom: 16 }}>
+				<div style={{ fontWeight: 700, marginBottom: 8 }}>Requester Information</div>
+				<div style={{ background: '#f8fafc', padding: 16, borderRadius: 10 }}>
+					<div style={{ marginBottom: 8 }}><strong>Name:</strong> {requester.name || '-'}</div>
+					<div style={{ marginBottom: 8 }}><strong>Email:</strong> {requester.email || '-'}</div>
+					<div><strong>Country:</strong> {requester.country || '-'}</div>
+				</div>
+			</section>
+
+			<section style={{ marginBottom: 16 }}>
+				<div style={{ fontWeight: 700, marginBottom: 8 }}>Request Details</div>
+				<div style={{ background: '#f8fafc', padding: 16, borderRadius: 10 }}>
+					<div style={{ marginBottom: 8 }}><strong>Type:</strong> {details.type}</div>
+					<div><strong>ID Proof Received:</strong> {details.idProofReceived ? 'Yes' : 'No'}</div>
+				</div>
+			</section>
+
+			<section>
+				<div style={{ background: '#e7f0ff', padding: 16, borderRadius: 10 }}>
+					<div style={{ fontWeight: 700, marginBottom: 8 }}>What happens next?</div>
+					<ul style={{ margin: 0, paddingLeft: 18, color: '#374151' }}>
+						<li>A new case will be created with a unique ID</li>
+						<li>The request will be assigned to the next available team member</li>
+						<li>Due date will be calculated based on request type and SLA settings</li>
+						<li>You'll be redirected to the case workspace to manage progress</li>
+					</ul>
+				</div>
+			</section>
 		</div>
 	);
 }
