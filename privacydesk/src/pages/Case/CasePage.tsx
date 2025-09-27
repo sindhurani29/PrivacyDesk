@@ -24,7 +24,7 @@ export default function CasePage() {
   const [decision, setDecision] = useState<'done' | 'rejected' | ''>('');
   const [rationale, setRationale] = useState('');
   const [citation, setCitation] = useState('');
-  const [policyHelperExpanded, setPolicyHelperExpanded] = useState(false);
+  const [policyHelperExpanded, setPolicyHelperExpanded] = useState(true);
   const dialogDescId = useId();
   const decisionRef = useRef<DropDownListHandle | null>(null);
   const [showExport, setShowExport] = useState(false);
@@ -190,7 +190,33 @@ export default function CasePage() {
             
             <TabStripTab title={`Evidence (${req.attachments?.length || 0})`}>
               <div style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Attached Files</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: 0 }}>Attached Files</h3>
+                  <div>
+                    <input
+                      type="file"
+                      id={`file-upload-${req.id}`}
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const { addAttachment } = useRequestsStore.getState();
+                          addAttachment(req.id, file);
+                          // Reset the input
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={() => document.getElementById(`file-upload-${req.id}`)?.click()}
+                      fillMode="outline"
+                      size="small"
+                    >
+                      📎 Upload File
+                    </Button>
+                  </div>
+                </div>
+                
                 {(req.attachments ?? []).length > 0 ? (
                   <div style={{ display: 'grid', gap: 8 }}>
                     {(req.attachments ?? []).map((f, i) => (
@@ -200,14 +226,52 @@ export default function CasePage() {
                         borderRadius: 8, 
                         fontSize: 14,
                         color: '#374151',
-                        border: '1px solid #e5e7eb'
+                        border: '1px solid #e5e7eb',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                       }}>
-                        📎 {f.name}
+                        <span>📎 {f.name}</span>
+                        {f.url && (
+                          <a 
+                            href={f.url} 
+                            download={f.name}
+                            style={{ 
+                              color: '#3b82f6', 
+                              textDecoration: 'none', 
+                              fontSize: 12,
+                              padding: '4px 8px',
+                              borderRadius: 4,
+                              border: '1px solid #3b82f6'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            Download
+                          </a>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p style={{ color: '#6b7280', fontSize: 14, fontStyle: 'italic' }}>No evidence files attached</p>
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: 40, 
+                    border: '2px dashed #d1d5db', 
+                    borderRadius: 8,
+                    backgroundColor: '#f9fafb'
+                  }}>
+                    <p style={{ color: '#6b7280', fontSize: 14, fontStyle: 'italic', margin: 0, marginBottom: 16 }}>
+                      No evidence files attached
+                    </p>
+                    <Button
+                      onClick={() => document.getElementById(`file-upload-${req.id}`)?.click()}
+                      fillMode="outline"
+                      size="small"
+                    >
+                      📎 Upload First File
+                    </Button>
+                  </div>
                 )}
               </div>
             </TabStripTab>

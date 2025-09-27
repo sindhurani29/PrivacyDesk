@@ -13,7 +13,12 @@ export interface StepDetailsProps {
 	onChange: (next: StepDetailsValue) => void;
 }
 
-const TYPES: RequestType[] = ['access', 'delete', 'export', 'correct'];
+const REQUEST_TYPES = [
+	{ value: 'access', text: 'Access Request - View personal data' },
+	{ value: 'delete', text: 'Delete Request - Remove personal data' },
+	{ value: 'export', text: 'Export Request - Download personal data' },
+	{ value: 'correct', text: 'Correction Request - Update personal data' }
+];
 
 export default function StepDetails({ value, onChange }: StepDetailsProps) {
 	return (
@@ -25,7 +30,14 @@ export default function StepDetails({ value, onChange }: StepDetailsProps) {
 			<div className="pd-card" style={{ padding: 16 }}>
 				<div className="grid-1" style={{ gap: 12 }}>
 					<div>
-						<DropDownList aria-label="Request type" data={TYPES} value={value.type} onChange={(e) => onChange({ ...value, type: e.value as RequestType })} />
+						<DropDownList 
+							aria-label="Request type" 
+							data={REQUEST_TYPES} 
+							textField="text"
+							dataItemKey="value"
+							value={REQUEST_TYPES.find(rt => rt.value === value.type)} 
+							onChange={(e) => onChange({ ...value, type: e.value.value as RequestType })} 
+						/>
 					</div>
 					<div>
 						<TextArea aria-label="Additional notes" value={value.notes} onChange={(e) => onChange({ ...value, notes: (e.value as string) ?? '' })} placeholder="Any additional details about this request..." />

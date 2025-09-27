@@ -17,6 +17,7 @@ interface RequestsStore {
   updateRequest: (r: DsrRequest) => Promise<void>;
   setOwner: (id: string, owner: string) => Promise<void>;
   addNote: (id: string, text: string, who?: string) => Promise<void>;
+  addAttachment: (id: string, file: File) => Promise<void>;
   closeRequest: (id: string, status: 'done'|'rejected', details: string, citation?: string) => Promise<void>;
   saveSettings: (s: Partial<SettingsState>) => Promise<void>;
 }
@@ -125,6 +126,23 @@ export const useRequestsStore = create<RequestsStore>((set, get) => ({
     if (!req) return;
     const note = { at: new Date().toISOString(), who, text };
     const updated: DsrRequest = { ...req, notes: [...req.notes, note] };
+    await db.requests.put(updated);
+    const next = get().requests.map(r => r.id === id ? updated : r);
+    set({ requests: next });
+    localStorage.setItem('privacydesk-state', JSON.stringify({ ...get(), requests: next }));
+  },
+  addAttachment: async (id, file) => {
+    const req = get().requests.find(r => r.id === id);
+    if (!req) return;
+    
+    // Create a file object for storage
+    const attachment = {
+      id: crypto.randomUUID(),
+      name: file.name,
+      url: URL.createObjectURL(file) // For demo purposes, in production you'd upload to a server
+    };
+    
+    const updated: DsrRequest = { ...req, attachments: [...req.attachments, attachment] };
     await db.requests.put(updated);
     const next = get().requests.map(r => r.id === id ? updated : r);
     set({ requests: next });
