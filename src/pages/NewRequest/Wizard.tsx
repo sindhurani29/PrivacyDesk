@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Stepper } from '@progress/kendo-react-layout';
 import { Button } from '@progress/kendo-react-buttons';
 import { useNavigate } from 'react-router-dom';
 import StepRequester, { type Requester } from './StepRequester';
@@ -9,10 +8,10 @@ import { useRequestsStore } from '../../store/requests';
 
 type StepIndex = 0 | 1 | 2;
 
-const steps: Array<{ label: string }> = [
-	{ label: 'Requester Information' },
-	{ label: 'Request Details' },
-	{ label: 'Review & Confirm' }
+const steps: Array<{ label: string; description: string }> = [
+	{ label: 'Requester Information', description: 'Basic details about the data subject' },
+	{ label: 'Request Details', description: 'Type and specifics of the request' },
+	{ label: 'Review & Confirm', description: 'Review all information before creating' }
 ];
 
 // Step component for Confirm remains a placeholder
@@ -24,19 +23,10 @@ export default function Wizard() {
 	const [requester, setRequester] = useState<Requester>({ name: '', email: '', country: '' });
 		const [details, setDetails] = useState<StepDetailsValue>({ type: 'access', notes: '', idProofReceived: false });
 	const navigate = useNavigate();
-		const { settings, addRequest } = useRequestsStore();
+	const { settings, addRequest } = useRequestsStore();
 
-		const onStepChange = (e: any) => {
-			const next = Math.max(0, Math.min(steps.length - 1, Number(e.value) || 0)) as StepIndex;
-			// Prevent skipping ahead if requester is not valid yet
-			if (next >= 1 && !canProceedFromRequester) {
-				return; // stay on current step until valid
-			}
-			setActive(next);
-		};
-
-		const handleBack = () => setActive((prev) => Math.max(0, (prev - 1) as StepIndex) as StepIndex);
-		const handleNext = () => setActive((prev) => Math.min(steps.length - 1, (prev + 1) as StepIndex) as StepIndex);
+	const handleBack = () => setActive((prev) => Math.max(0, (prev - 1) as StepIndex) as StepIndex);
+	const handleNext = () => setActive((prev) => Math.min(steps.length - 1, (prev + 1) as StepIndex) as StepIndex);
 
 		const canProceedFromRequester = useMemo(() => {
 			const hasName = requester.name.trim().length > 0;
@@ -47,22 +37,70 @@ export default function Wizard() {
 
 	return (
 		<div className="pd-page">
-			<div style={{ maxWidth: 920, margin: '0 auto' }}>
-				<div style={{ marginBottom: 16 }}>
-					<h1 className="h1" style={{ marginBottom: 4 }}>New Request</h1>
-					<p className="muted">Create a new data subject request</p>
+			<div style={{ maxWidth: 1000, margin: '0 auto' }}>
+				<div style={{ marginBottom: 32, textAlign: 'center' }}>
+					<h1 className="h1" style={{ marginBottom: 8, fontSize: '32px', fontWeight: 700 }}>New Request</h1>
+					<p className="muted" style={{ fontSize: '16px' }}>Create a new data subject request</p>
 				</div>
 
-				<div className="pd-card" style={{ padding: 16 }}>
-					<Stepper items={steps} value={active} onChange={onStepChange} />
+				<div className="pd-card" style={{ padding: 32, marginBottom: 24 }}>
+					{/* Custom Stepper */}
+					<div style={{ 
+						display: 'flex', 
+						alignItems: 'flex-start', 
+						justifyContent: 'space-evenly',
+						gap: 40,
+						marginBottom: 32
+					}}>
+						{steps.map((step, index) => (
+							<div key={index} style={{ 
+								display: 'flex', 
+								flexDirection: 'column', 
+								alignItems: 'center',
+								maxWidth: '200px',
+								textAlign: 'center'
+							}}>
+								<div style={{
+									width: '40px',
+									height: '40px',
+									borderRadius: '50%',
+									backgroundColor: index === active ? '#2563eb' : index < active ? '#2563eb' : '#e5e7eb',
+									color: index <= active ? 'white' : '#9ca3af',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									fontSize: '16px',
+									fontWeight: 600,
+									marginBottom: 12
+								}}>
+									{index + 1}
+								</div>
+								<div style={{
+									fontSize: '14px',
+									fontWeight: 600,
+									color: index === active ? '#1f2937' : '#6b7280',
+									marginBottom: 4
+								}}>
+									{step.label}
+								</div>
+								<div style={{
+									fontSize: '12px',
+									color: '#9ca3af',
+									lineHeight: 1.4
+								}}>
+									{step.description}
+								</div>
+							</div>
+						))}
+					</div>
 
-					<div className="mt-4">
+					<div>
 						{active === 0 && (
 							<StepRequester value={requester} onChange={setRequester} />
 						)}
-									{active === 1 && (
-										<StepDetails value={details} onChange={setDetails} />
-									)}
+						{active === 1 && (
+							<StepDetails value={details} onChange={setDetails} />
+						)}
 						{active === 2 && (
 							<StepConfirm value={{ requester, details }} />
 						)}

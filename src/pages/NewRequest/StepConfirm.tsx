@@ -12,41 +12,49 @@ export interface StepConfirmProps {
 export default function StepConfirm({ value }: StepConfirmProps) {
 	const { requester, details } = value;
 	return (
-		<div className="pd-card" style={{ padding: 16 }}>
-			<div style={{ marginBottom: 16 }}>
-				<div className="h2" style={{ margin: 0 }}>Review & Confirm</div>
-				<p className="muted">Review all information before creating</p>
+		<div className="pd-card" style={{ padding: 32 }}>
+			<div style={{ marginBottom: 24, textAlign: 'left' }}>
+				<h2 style={{ margin: 0, fontSize: '20px', fontWeight: 600, color: '#1f2937', marginBottom: 4 }}>
+					Review & Confirm
+				</h2>
+				<p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+					Review all information before creating
+				</p>
 			</div>
 
-			<section style={{ marginBottom: 16 }}>
-				<div style={{ fontWeight: 700, marginBottom: 8 }}>Requester Information</div>
-				<div style={{ background: '#f8fafc', padding: 16, borderRadius: 10 }}>
-					<div style={{ marginBottom: 8 }}><strong>Name:</strong> {requester.name || '-'}</div>
-					<div style={{ marginBottom: 8 }}><strong>Email:</strong> {requester.email || '-'}</div>
-					<div><strong>Country:</strong> {requester.country || '-'}</div>
-				</div>
-			</section>
+			<div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+				<section>
+					<div style={{ fontWeight: 600, marginBottom: 12, fontSize: '16px', color: '#374151' }}>Requester Information</div>
+					<div style={{ background: '#f8fafc', padding: 20, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+						<div style={{ marginBottom: 8 }}><strong>Name:</strong> <span style={{ color: '#6b7280' }}>{requester.name || '-'}</span></div>
+						<div style={{ marginBottom: 8 }}><strong>Email:</strong> <span style={{ color: '#6b7280' }}>{requester.email || '-'}</span></div>
+						<div><strong>Country:</strong> <span style={{ color: '#6b7280' }}>{requester.country || '-'}</span></div>
+					</div>
+				</section>
 
-			<section style={{ marginBottom: 16 }}>
-				<div style={{ fontWeight: 700, marginBottom: 8 }}>Request Details</div>
-				<div style={{ background: '#f8fafc', padding: 16, borderRadius: 10 }}>
-					<div style={{ marginBottom: 8 }}><strong>Type:</strong> {details.type}</div>
-					<div><strong>ID Proof Received:</strong> {details.idProofReceived ? 'Yes' : 'No'}</div>
-				</div>
-			</section>
+				<section>
+					<div style={{ fontWeight: 600, marginBottom: 12, fontSize: '16px', color: '#374151' }}>Request Details</div>
+					<div style={{ background: '#f8fafc', padding: 20, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+						<div style={{ marginBottom: 8 }}><strong>Type:</strong> <span style={{ color: '#6b7280' }}>{details.type}</span></div>
+						<div style={{ marginBottom: 8 }}><strong>ID Proof Received:</strong> <span style={{ color: '#6b7280' }}>{details.idProofReceived ? 'Yes' : 'No'}</span></div>
+						{details.notes && (
+							<div><strong>Notes:</strong> <span style={{ color: '#6b7280' }}>{details.notes}</span></div>
+						)}
+					</div>
+				</section>
 
-			<section>
-				<div style={{ background: '#e7f0ff', padding: 16, borderRadius: 10 }}>
-					<div style={{ fontWeight: 700, marginBottom: 8 }}>What happens next?</div>
-					<ul style={{ margin: 0, paddingLeft: 18, color: '#374151' }}>
-						<li>A new case will be created with a unique ID</li>
-						<li>The request will be assigned to the next available team member</li>
-						<li>Due date will be calculated based on request type and SLA settings</li>
-						<li>You'll be redirected to the case workspace to manage progress</li>
-					</ul>
-				</div>
-			</section>
+				<section>
+					<div style={{ background: '#e7f0ff', padding: 20, borderRadius: 8, border: '1px solid #bfdbfe' }}>
+						<div style={{ fontWeight: 600, marginBottom: 12, color: '#2563eb' }}>What happens next?</div>
+						<ul style={{ margin: 0, paddingLeft: 18, color: '#374151', lineHeight: 1.6 }}>
+							<li>A new case will be created with a unique ID</li>
+							<li>The request will be assigned to the next available team member</li>
+							<li>Due date will be calculated based on request type and SLA settings</li>
+							<li>You'll be redirected to the case workspace to manage progress</li>
+						</ul>
+					</div>
+				</section>
+			</div>
 		</div>
 	);
 }
-

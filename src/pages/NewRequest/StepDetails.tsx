@@ -22,33 +22,67 @@ const REQUEST_TYPES = [
 
 export default function StepDetails({ value, onChange }: StepDetailsProps) {
 	return (
-		<div>
-			<div style={{ marginBottom: 16 }}>
-				<div className="h2" style={{ margin: 0 }}>Request Details</div>
-				<p className="muted">Type and specifics of the request</p>
+		<div className="pd-card" style={{ padding: 32 }}>
+			<div style={{ marginBottom: 24, textAlign: 'left' }}>
+				<h2 style={{ margin: 0, fontSize: '20px', fontWeight: 600, color: '#1f2937', marginBottom: 4 }}>
+					Request Details
+				</h2>
+				<p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+					Type and specifics of the request
+				</p>
 			</div>
-			<div className="pd-card" style={{ padding: 16 }}>
-				<div className="grid-1" style={{ gap: 12 }}>
-					<div>
-						<DropDownList 
-							aria-label="Request type" 
-							data={REQUEST_TYPES} 
-							textField="text"
-							dataItemKey="value"
-							value={REQUEST_TYPES.find(rt => rt.value === value.type)} 
-							onChange={(e) => onChange({ ...value, type: e.value.value as RequestType })} 
-						/>
-					</div>
-					<div>
-						<TextArea aria-label="Additional notes" value={value.notes} onChange={(e) => onChange({ ...value, notes: (e.value as string) ?? '' })} placeholder="Any additional details about this request..." />
-					</div>
-					<div className="flex items-center gap-2">
-						<Switch aria-labelledby="id-proof-label" checked={value.idProofReceived} onChange={(e) => onChange({ ...value, idProofReceived: Boolean(e.value) })} />
-						<span id="id-proof-label">ID proof received?</span>
-					</div>
+
+			<div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+				<div>
+					<label style={{ 
+						display: 'block', 
+						fontSize: '14px', 
+						fontWeight: 600, 
+						color: '#374151',
+						marginBottom: '6px'
+					}}>
+						Request Type *
+					</label>
+					<DropDownList 
+						aria-label="Request type" 
+						data={REQUEST_TYPES} 
+						textField="text"
+						dataItemKey="value"
+						value={REQUEST_TYPES.find(rt => rt.value === value.type)} 
+						onChange={(e) => onChange({ ...value, type: e.value.value as RequestType })} 
+						style={{ width: '100%' }}
+					/>
+				</div>
+				<div>
+					<label style={{ 
+						display: 'block', 
+						fontSize: '14px', 
+						fontWeight: 600, 
+						color: '#374151',
+						marginBottom: '6px'
+					}}>
+						Additional Notes
+					</label>
+					<TextArea 
+						aria-label="Additional notes" 
+						value={value.notes} 
+						onChange={(e) => onChange({ ...value, notes: (e.value as string) ?? '' })} 
+						placeholder="Any additional details about this request..." 
+						rows={4}
+						style={{ width: '100%' }}
+					/>
+				</div>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+					<Switch 
+						aria-labelledby="id-proof-label" 
+						checked={value.idProofReceived} 
+						onChange={(e) => onChange({ ...value, idProofReceived: Boolean(e.value) })} 
+					/>
+					<span id="id-proof-label" style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+						ID proof received?
+					</span>
 				</div>
 			</div>
 		</div>
 	);
 }
-

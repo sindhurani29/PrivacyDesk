@@ -25,13 +25,15 @@ body {
 /* Shell */
 .pd-shell {
   display: flex;
-  min-height: 100vh;
+  flex-direction: column;
+  height: 100vh;
   background: var(--pd-bg);
 }
 
 .pd-main {
-  width: 100%;
+  flex: 1;
   padding: 24px;
+  overflow-y: auto;
 }
 
 /* Top bar */
@@ -48,6 +50,20 @@ header .k-appbar a {
   font-weight: 500;
 }
 header .k-appbar a:hover { color: var(--pd-text); }
+
+/* Layout stability rules */
+.pd-grid .k-grid-content {
+  min-height: 350px !important;
+}
+
+.pd-card {
+  min-height: fit-content;
+}
+
+/* Prevent layout shifts on dropdown interactions */
+.k-dropdown-wrap, .k-multiselect-wrap {
+  position: relative;
+}
 
 /* Drawer */
 nav .k-drawer {
