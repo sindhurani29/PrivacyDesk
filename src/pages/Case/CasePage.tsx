@@ -10,8 +10,11 @@ import { TextArea, Input } from '@progress/kendo-react-inputs';
 import SLAWidget from './SLAWidget';
 import { formatDateTime } from '../../lib/date';
 import NotesPanel from './NotesPanel';
+import EvidencePanel from './EvidencePanel';
 import NucliaAssistant from './NucliaAssistant';
 import PreviewWindow from '../Runbook/PreviewWindow';
+import ConfirmDialog from '../../components/Common/ConfirmDialog';
+import { useToast } from '../../components/Common/Toaster';
 
 const OWNER_OPTIONS = ['Alex', 'Priya', 'Jordan', 'Sam', 'Taylor', 'Unassigned'];
 
@@ -19,8 +22,11 @@ export default function CasePage() {
   const { id } = useParams();
   const { requests, setOwner, closeRequest, load } = useRequestsStore();
   const req = requests.find((r) => r.id === id);
+  const showToast = useToast();
   const [selected, setSelected] = useState(0);
   const [showClose, setShowClose] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [decision, setDecision] = useState<'done' | 'rejected' | ''>('');
   const [rationale, setRationale] = useState('');
   const [citation, setCitation] = useState('');
@@ -50,6 +56,37 @@ export default function CasePage() {
     const elapsedTime = now.getTime() - submitted.getTime();
     const percentage = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
     return Math.round(percentage);
+  };
+
+  const handleCloseRequest = async () => {
+    if (!req || !decision || !rationale.trim() || !citation.trim()) return;
+    
+    try {
+      await closeRequest(req.id, decision as 'done' | 'rejected', rationale.trim(), citation.trim());
+      const statusText = decision === 'done' ? 'completed' : 'rejected';
+      showToast({ text: `Request ${req.id} ${statusText} successfully`, type: 'success' });
+      setShowClose(false);
+      setShowCloseConfirm(false);
+      setShowRejectConfirm(false);
+      // Reset form
+      setDecision('');
+      setRationale('');
+      setCitation('');
+    } catch (error) {
+      showToast({ text: 'Failed to update request. Please try again.', type: 'error' });
+    }
+  };
+
+  const handleCloseButtonClick = () => {
+    if (!decision || !rationale.trim() || !citation.trim()) {
+      return;
+    }
+
+    if (decision === 'done') {
+      setShowCloseConfirm(true);
+    } else if (decision === 'rejected') {
+      setShowRejectConfirm(true);
+    }
   };
 
   return (
@@ -113,7 +150,7 @@ export default function CasePage() {
         </div>
 
         <div style={{ flex: '0 0 auto' }}>
-          <SLAWidget dueAt={req.dueAt} />
+          <SLAWidget submittedAt={req.submittedAt} dueAt={req.dueAt} />
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, flex: '0 0 auto' }}>
@@ -127,8 +164,8 @@ export default function CasePage() {
       {/* Main Content */}
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ flex: 1 }}>
-          <TabStrip selected={selected} onSelect={(e) => setSelected(e.selected)} aria-label="Case content" className="pd-card" style={{ padding: 0 }}>
-            <TabStripTab title="Overview">
+          <TabStrip selected={selected} onSelect={(e) => setSelected(e.selected)} aria-label="Case content tabs" className="pd-card" style={{ padding: 0 }}>
+            <TabStripTab title="Overview" aria-label="Overview tab">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: 24 }}>
                 {/* Requester Information */}
                 <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
@@ -179,104 +216,38 @@ export default function CasePage() {
                     </div>
                   </div>
                 </div>
+                
+                {/* Export Section in Overview */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, gridColumn: 'span 2' }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Export Case Data</h3>
+                  <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>
+                    Export all case information including notes, evidence, and history for external review or archival.
+                  </p>
+                  <Button 
+                    onClick={() => setShowExport(true)}
+                    themeColor="primary"
+                    style={{ padding: '8px 16px' }}
+                    aria-label="Open export preview"
+                  >
+                    Open Export Preview
+                  </Button>
+                </div>
               </div>
             </TabStripTab>
             
-            <TabStripTab title={`Notes (${req.notes?.length || 0})`}>
+            <TabStripTab title="Notes" aria-label={`Notes tab (${req.notes?.length || 0} notes)`}>
               <div style={{ padding: 24 }}>
                 <NotesPanel id={req.id} />
               </div>
             </TabStripTab>
             
-            <TabStripTab title={`Evidence (${req.attachments?.length || 0})`}>
+            <TabStripTab title="Evidence" aria-label={`Evidence tab (${req.attachments?.length || 0} files)`}>
               <div style={{ padding: 24 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: 0 }}>Attached Files</h3>
-                  <div>
-                    <input
-                      type="file"
-                      id={`file-upload-${req.id}`}
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const { addAttachment } = useRequestsStore.getState();
-                          addAttachment(req.id, file);
-                          // Reset the input
-                          e.target.value = '';
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={() => document.getElementById(`file-upload-${req.id}`)?.click()}
-                      fillMode="outline"
-                      size="small"
-                    >
-                      📎 Upload File
-                    </Button>
-                  </div>
-                </div>
-                
-                {(req.attachments ?? []).length > 0 ? (
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    {(req.attachments ?? []).map((f, i) => (
-                      <div key={f.id ?? i} style={{ 
-                        padding: 12, 
-                        backgroundColor: '#f8fafc', 
-                        borderRadius: 8, 
-                        fontSize: 14,
-                        color: '#374151',
-                        border: '1px solid #e5e7eb',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <span>📎 {f.name}</span>
-                        {f.url && (
-                          <a 
-                            href={f.url} 
-                            download={f.name}
-                            style={{ 
-                              color: '#3b82f6', 
-                              textDecoration: 'none', 
-                              fontSize: 12,
-                              padding: '4px 8px',
-                              borderRadius: 4,
-                              border: '1px solid #3b82f6'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                          >
-                            Download
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: 40, 
-                    border: '2px dashed #d1d5db', 
-                    borderRadius: 8,
-                    backgroundColor: '#f9fafb'
-                  }}>
-                    <p style={{ color: '#6b7280', fontSize: 14, fontStyle: 'italic', margin: 0, marginBottom: 16 }}>
-                      No evidence files attached
-                    </p>
-                    <Button
-                      onClick={() => document.getElementById(`file-upload-${req.id}`)?.click()}
-                      fillMode="outline"
-                      size="small"
-                    >
-                      📎 Upload First File
-                    </Button>
-                  </div>
-                )}
+                <EvidencePanel />
               </div>
             </TabStripTab>
             
-            <TabStripTab title="History">
+            <TabStripTab title="History" aria-label={`History tab (${req.history?.length || 0} events)`}>
               <div style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Request History</h3>
                 {(req.history ?? []).length > 0 ? (
@@ -301,22 +272,6 @@ export default function CasePage() {
                 ) : (
                   <p style={{ color: '#6b7280', fontSize: 14, fontStyle: 'italic' }}>No history available</p>
                 )}
-              </div>
-            </TabStripTab>
-            
-            <TabStripTab title="Export">
-              <div style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Export Case Data</h3>
-                <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>
-                  Export all case information including notes, evidence, and history for external review or archival.
-                </p>
-                <Button 
-                  onClick={() => setShowExport(true)}
-                  themeColor="primary"
-                  style={{ padding: '8px 16px' }}
-                >
-                  Open Export Preview
-                </Button>
               </div>
             </TabStripTab>
           </TabStrip>
@@ -349,6 +304,7 @@ export default function CasePage() {
                   color: '#6b7280',
                   transition: 'all 0.2s ease'
                 }}
+                aria-label="Collapse Policy Helper"
                 title="Collapse"
               >
                 →
@@ -387,6 +343,7 @@ export default function CasePage() {
                 height: '60px',
                 width: '40px'
               }}
+              aria-label="Expand Policy Helper"
               title="Expand Policy Helper"
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#f8fafc';
@@ -438,12 +395,7 @@ export default function CasePage() {
             <Button
               themeColor="primary"
               disabled={!decision || !rationale.trim() || !citation.trim()}
-              onClick={() => {
-                if (!req) return;
-                if (!decision) return;
-                closeRequest(req.id, decision as 'done' | 'rejected', rationale.trim(), citation.trim());
-                setShowClose(false);
-              }}
+              onClick={handleCloseButtonClick}
               aria-label="Confirm close request"
             >
               Confirm
@@ -468,6 +420,20 @@ export default function CasePage() {
           history: req.history?.map(h => `${formatDateTime(h.at)} • ${h.action}${h.details ? `: ${h.details}` : ''}`) ?? [],
         }}
         title={`Export ${req.id}`}
+      />
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        text={`Are you sure you want to mark request ${req?.id} as completed? This action cannot be undone.`}
+        onOk={handleCloseRequest}
+        onCancel={() => setShowCloseConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={showRejectConfirm}
+        text={`Are you sure you want to reject request ${req?.id}? This action cannot be undone.`}
+        onOk={handleCloseRequest}
+        onCancel={() => setShowRejectConfirm(false)}
       />
     </main>
   );

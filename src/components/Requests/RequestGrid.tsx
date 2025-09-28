@@ -4,6 +4,9 @@ import { Button } from '@progress/kendo-react-buttons';
 import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
 import type { DsrRequest } from '../../store';
 import { Link, useNavigate } from 'react-router-dom';
+import { useRequestsStore } from '../../store/requests';
+import ConfirmDialog from '../Common/ConfirmDialog';
+import { useToast } from '../Common/Toaster';
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
@@ -24,6 +27,9 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
   const [page, setPage] = useState({ skip: 0, take: 10 });
   const [sort, setSort] = useState<any[]>([{ field: 'submittedAt', dir: 'desc' }]);
   const [preview, setPreview] = useState<DsrRequest | null>(null);
+  const [markDoneConfirm, setMarkDoneConfirm] = useState<DsrRequest | null>(null);
+  const { closeRequest } = useRequestsStore();
+  const showToast = useToast();
   const AnyColumn: any = Column;
   const navigate = useNavigate();
 
@@ -48,6 +54,16 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
     </svg>
   );
+
+  const handleMarkDone = async (request: DsrRequest) => {
+    try {
+      await closeRequest(request.id, 'done', 'Marked as completed from grid view', '');
+      showToast({ text: `Request ${request.id} marked as completed`, type: 'success' });
+      setMarkDoneConfirm(null);
+    } catch (error) {
+      showToast({ text: 'Failed to mark request as done. Please try again.', type: 'error' });
+    }
+  };
 
   return (
     <>
@@ -102,16 +118,30 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
         <Column field="owner" title="Owner" />
         <AnyColumn title="Actions" cell={(p: any) => (
           <td>
-            <Button
-              fillMode="outline"
-              themeColor="base"
-              title="Preview"
-              aria-label={`Preview ${p.dataItem.id}`}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPreview(p.dataItem); }}
-              style={{ padding: '4px 8px' }}
-            >
-              <EyeIcon />
-            </Button>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <Button
+                fillMode="outline"
+                themeColor="base"
+                title="Preview"
+                aria-label={`Preview ${p.dataItem.id}`}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPreview(p.dataItem); }}
+                style={{ padding: '4px 8px' }}
+              >
+                <EyeIcon />
+              </Button>
+              {p.dataItem.status !== 'done' && p.dataItem.status !== 'rejected' && (
+                <Button
+                  fillMode="outline"
+                  themeColor="primary"
+                  title="Mark Done"
+                  aria-label={`Mark ${p.dataItem.id} as done`}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMarkDoneConfirm(p.dataItem); }}
+                  style={{ padding: '4px 8px', fontSize: '12px' }}
+                >
+                  Mark Done
+                </Button>
+              )}
+            </div>
           </td>
         )} />
       </Grid>
@@ -126,6 +156,13 @@ export default function RequestGrid({ data }: { data: DsrRequest[] }) {
           </DialogActionsBar>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={!!markDoneConfirm}
+        text={`Are you sure you want to mark request ${markDoneConfirm?.id} as completed? This action cannot be undone.`}
+        onOk={() => markDoneConfirm && handleMarkDone(markDoneConfirm)}
+        onCancel={() => setMarkDoneConfirm(null)}
+      />
     </>
   );
 }

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { NumericTextBox } from '@progress/kendo-react-inputs';
-import { Input, TextArea } from '@progress/kendo-react-inputs';
+import { NumericTextBox, Input, TextArea } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { useRequestsStore } from '../../store/requests';
+import { useToast } from '../../components/Common/Toaster';
 
 export default function SettingsPage() {
   const { settings, requests, saveSettings, load } = useRequestsStore();
-  const [slaDays, setSlaDays] = useState(settings.slaDays);
+  const showToast = useToast();
   const [owners, setOwners] = useState<string[]>(settings.owners);
   const [newOwner, setNewOwner] = useState('');
   const [templates, setTemplates] = useState<string>(settings.templates || 'Thank you for your request. We will process it within the required timeframe.');
@@ -24,7 +24,6 @@ export default function SettingsPage() {
   }, [load]);
 
   useEffect(() => {
-    setSlaDays(settings.slaDays);
     setOwners(settings.owners);
     setOriginalSettings(settings);
     if (settings.templates) {
@@ -36,7 +35,7 @@ export default function SettingsPage() {
   // Check for changes
   useEffect(() => {
     const currentState = {
-      slaDays,
+      slaDays: settings.slaDays,
       owners,
       templates
     };
@@ -48,12 +47,17 @@ export default function SettingsPage() {
     
     const hasChanges = JSON.stringify(currentState) !== JSON.stringify(originalState);
     setHasUnsavedChanges(hasChanges);
-  }, [slaDays, owners, templates, originalSettings]);
+  }, [settings.slaDays, owners, templates, originalSettings]);
 
-  const handleSlaChange = (type: keyof typeof slaDays, value: number | null) => {
+  const handleSlaChange = async (type: keyof typeof settings.slaDays, value: number | null) => {
     const numValue = value || 30;
-    const newSlaDays = { ...slaDays, [type]: numValue };
-    setSlaDays(newSlaDays);
+    const newSlaDays = { ...settings.slaDays, [type]: numValue };
+    try {
+      await saveSettings({ slaDays: newSlaDays });
+      showToast({ text: `SLA for ${type} requests updated to ${numValue} days`, type: 'success' });
+    } catch (error) {
+      showToast({ text: 'Failed to update SLA. Please try again.', type: 'error' });
+    }
   };
 
   const handleAddOwner = () => {
@@ -84,16 +88,19 @@ export default function SettingsPage() {
   };
 
   const handleSaveChanges = async () => {
-    await saveSettings({ 
-      slaDays, 
-      owners, 
-      templates 
-    });
-    setHasUnsavedChanges(false);
+    try {
+      await saveSettings({ 
+        owners, 
+        templates 
+      });
+      setHasUnsavedChanges(false);
+      showToast({ text: 'Settings saved successfully', type: 'success' });
+    } catch (error) {
+      showToast({ text: 'Failed to save settings. Please try again.', type: 'error' });
+    }
   };
 
   const handleDiscardChanges = () => {
-    setSlaDays(originalSettings.slaDays);
     setOwners(originalSettings.owners);
     setTemplates(originalSettings.templates || 'Thank you for your request. We will process it within the required timeframe.');
     setHasUnsavedChanges(false);
@@ -150,7 +157,7 @@ export default function SettingsPage() {
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Access Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <NumericTextBox
-                  value={slaDays.access}
+                  value={settings.slaDays.access}
                   onChange={(e) => handleSlaChange('access', e.value)}
                   style={{ width: 80 }}
                   min={1}
@@ -163,7 +170,7 @@ export default function SettingsPage() {
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Delete Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <NumericTextBox
-                  value={slaDays.delete}
+                  value={settings.slaDays.delete}
                   onChange={(e) => handleSlaChange('delete', e.value)}
                   style={{ width: 80 }}
                   min={1}
@@ -176,7 +183,7 @@ export default function SettingsPage() {
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Export Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <NumericTextBox
-                  value={slaDays.export}
+                  value={settings.slaDays.export}
                   onChange={(e) => handleSlaChange('export', e.value)}
                   style={{ width: 80 }}
                   min={1}
@@ -189,7 +196,7 @@ export default function SettingsPage() {
               <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>Correct Requests</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <NumericTextBox
-                  value={slaDays.correct}
+                  value={settings.slaDays.correct}
                   onChange={(e) => handleSlaChange('correct', e.value)}
                   style={{ width: 80 }}
                   min={1}
@@ -203,10 +210,10 @@ export default function SettingsPage() {
           <div>
             <div style={{ marginBottom: 12, fontSize: 14, fontWeight: 600, color: '#374151' }}>Current SLA Summary:</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, fontSize: 13, color: '#6b7280' }}>
-              <div>Access: <span style={{ fontWeight: 600, color: '#374151' }}>{slaDays.access}d</span></div>
-              <div>Delete: <span style={{ fontWeight: 600, color: '#374151' }}>{slaDays.delete}d</span></div>
-              <div>Export: <span style={{ fontWeight: 600, color: '#374151' }}>{slaDays.export}d</span></div>
-              <div>Correct: <span style={{ fontWeight: 600, color: '#374151' }}>{slaDays.correct}d</span></div>
+              <div>Access: <span style={{ fontWeight: 600, color: '#374151' }}>{settings.slaDays.access}d</span></div>
+              <div>Delete: <span style={{ fontWeight: 600, color: '#374151' }}>{settings.slaDays.delete}d</span></div>
+              <div>Export: <span style={{ fontWeight: 600, color: '#374151' }}>{settings.slaDays.export}d</span></div>
+              <div>Correct: <span style={{ fontWeight: 600, color: '#374151' }}>{settings.slaDays.correct}d</span></div>
             </div>
           </div>
         </div>

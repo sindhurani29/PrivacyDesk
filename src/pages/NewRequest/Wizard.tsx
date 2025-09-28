@@ -5,6 +5,7 @@ import StepRequester, { type Requester } from './StepRequester';
 import StepDetails, { type StepDetailsValue } from './StepDetails';
 import StepConfirm from './StepConfirm';
 import { useRequestsStore } from '../../store/requests';
+import { useToast } from '../../components/Common/Toaster';
 
 type StepIndex = 0 | 1 | 2;
 
@@ -24,6 +25,7 @@ export default function Wizard() {
 		const [details, setDetails] = useState<StepDetailsValue>({ type: 'access', notes: '', idProofReceived: false });
 	const navigate = useNavigate();
 	const { settings, addRequest } = useRequestsStore();
+	const showToast = useToast();
 
 	const handleBack = () => setActive((prev) => Math.max(0, (prev - 1) as StepIndex) as StepIndex);
 	const handleNext = () => setActive((prev) => Math.min(steps.length - 1, (prev + 1) as StepIndex) as StepIndex);
@@ -158,26 +160,31 @@ export default function Wizard() {
 												const due = new Date();
 												due.setDate(due.getDate() + days);
 												
-												// Create the request with notes if provided
-												const requestData: any = {
-													type: details.type,
-													requester: { name: requester.name, email: requester.email, country: requester.country },
-													dueAt: due.toISOString(),
-													owner: 'Alex',
-													status: 'new',
-												};
-												
-												const created = await addRequest(requestData);
-												
-												// Add the initial note if provided
-												if (details.notes.trim()) {
-													// We need to add the note after the request is created
-													// Use the addNote function from the store
-													const { addNote } = useRequestsStore.getState();
-													await addNote(created.id, details.notes.trim(), 'System');
+												try {
+													// Create the request with notes if provided
+													const requestData: any = {
+														type: details.type,
+														requester: { name: requester.name, email: requester.email, country: requester.country },
+														dueAt: due.toISOString(),
+														owner: 'Alex',
+														status: 'new',
+													};
+													
+													const created = await addRequest(requestData);
+													
+													// Add the initial note if provided
+													if (details.notes.trim()) {
+														// We need to add the note after the request is created
+														// Use the addNote function from the store
+														const { addNote } = useRequestsStore.getState();
+														await addNote(created.id, details.notes.trim(), 'System');
+													}
+													
+													showToast({ text: `Request ${created.id} created successfully`, type: 'success' });
+													navigate(`/case/${created.id}`);
+												} catch (error) {
+													showToast({ text: 'Failed to create request. Please try again.', type: 'error' });
 												}
-												
-												navigate(`/case/${created.id}`);
 											}}
 										>
 											Create Request
