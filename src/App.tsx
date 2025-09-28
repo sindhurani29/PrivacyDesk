@@ -2,8 +2,8 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import TopBar from './components/AppShell/TopBar';
 import SideNav from './components/AppShell/SideNav';
 import AppRoutes from './router';
-import '@progress/kendo-theme-default/dist/all.css';
 import './index.css';
+import './App.css';
 
 function AppContent() {
   const location = useLocation();
@@ -14,11 +14,11 @@ function AppContent() {
   }
 
   return (
-    <div className="pd-shell">
+    <div className="pd-shell" style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f6f8fb' }}>
       <TopBar />
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <SideNav />
-        <main className="pd-main">
+        <main className="pd-main" style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
           <AppRoutes />
         </main>
       </div>
