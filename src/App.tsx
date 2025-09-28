@@ -1,33 +1,35 @@
-import { AppBar } from '@progress/kendo-react-layout';
-import { Link, Routes, Route, Navigate } from 'react-router-dom';
-import RequestsPage from './pages/RequestsPage';
-import Wizard from './pages/NewRequest/Wizard';
-import CasePage from './pages/Case/CasePage';
+import { BrowserRouter, useLocation } from 'react-router-dom';
+import TopBar from './components/AppShell/TopBar';
+import SideNav from './components/AppShell/SideNav';
+import AppRoutes from './router';
+import '@progress/kendo-theme-default/dist/all.css';
+import './index.css';
+
+function AppContent() {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  if (isLoginPage) {
+    return <AppRoutes />;
+  }
+
+  return (
+    <div className="pd-shell">
+      <TopBar />
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        <SideNav />
+        <main className="pd-main">
+          <AppRoutes />
+        </main>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   return (
-    <div>
-      <AppBar>
-        <div style={{ padding: '0 12px', fontWeight: 700 }}>PrivacyDesk</div>
-        <nav style={{ marginLeft: 'auto', display: 'flex', gap: 16 }}>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/requests">Requests</Link>
-          <Link to="/new">New</Link>
-          <Link to="/settings">Settings</Link>
-        </nav>
-      </AppBar>
-
-      <main style={{ padding: 16 }}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/requests" replace />} />
-          <Route path="/dashboard" element={<div>Dashboard (placeholder)</div>} />
-          <Route path="/requests" element={<RequestsPage />} />
-          <Route path="/new" element={<Wizard />} />
-          <Route path="/settings" element={<div>Settings (placeholder)</div>} />
-          <Route path="/case/:id" element={<CasePage />} />
-          <Route path="*" element={<Navigate to="/requests" replace />} />
-        </Routes>
-      </main>
-    </div>
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }

@@ -115,7 +115,7 @@ export default function RequestGrid({
         onPageChange={handlePageChange}
         onSortChange={handleSortChange}
         onRowClick={(e) => navigate(`/case/${e.dataItem.id}`)}
-        style={{ fontSize: 13, lineHeight: 1.3 }}
+        style={{ fontSize: 13, lineHeight: 1.3, minHeight: '450px' }}
       >
         <AnyColumn field="id" title="ID" cell={(p: any) => (
           <td>
