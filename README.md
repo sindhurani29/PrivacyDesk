@@ -3,7 +3,7 @@
 PrivacyDesk is a React + TypeScript app for managing privacy requests (Access / Delete / Export / Correct). It lets teams intake requests, triage them, track SLAs, capture notes/evidence, and export a runbook.
 
 - **Repo**: https://github.com/sindhurani29/PrivacyDesk
-- **Live demo**: 
+- **Live demo**: [Demo](https://drive.google.com/file/d/1t8elCHlfeLXLnMfPngjm3TdP6eB6f-8F/view?usp=share_link)
 
 ## Challenge: DEV × KendoReact Free Components
 
@@ -127,17 +127,17 @@ grep -R "@progress/kendo-react-" -n src | sort
 
 Short entries you can keep in the repo or DEV post:
 
-### Requests Grid scaffold
+### Requests Grid
 **Prompt**: @kendoreact Create a KendoReact Grid (TypeScript) for privacy requests with columns: id, type, requester.email, submittedAt (date), dueAt (date), status rendered with a Kendo Badge, owner, and an Actions column with a small "Open" button that navigates to /case/:id.
 Enable paging (10 rows/page), sorting, and column menus. No custom CSS. Use existing data prop and useNavigate for route.
-**Commit**: https://github.com/sindhurani29/PrivacyDesk/pull/2/commits
+**Commit**: [Requests Grid](https://github.com/sindhurani29/PrivacyDesk/pull/2/commits)
 
-### New Request flow
+### New Request Stepper
 **Prompt**: @kendoreact Create a Kendo Stepper (TypeScript) with 3 steps: Requester →
 Details → Confirm.
 Manage active index in state and render StepRequester, StepDetails, StepConfirm accordingly.
 Add Next/Back handlers. No custom CSS.
-**Commit**: https://github.com/sindhurani29/PrivacyDesk/pull/4/commits
+**Commit**: [New Request Stepper](https://github.com/sindhurani29/PrivacyDesk/pull/4/commits)
 
 ### Filters ToolBar
 **Prompt**: @kendoreact Build a KendoReact filters toolbar (TypeScript) with:
@@ -149,7 +149,7 @@ new in_progress|waiting/done/reject ed/all
 (From, To)
 Controlled via props: { type, setType, status, setStatus, owner, setOwner, dateFrom, setDateFrom, dateTo, setDateTo }.
 No custom CSS.
-**Commit**: https://github.com/sindhurani29/PrivacyDesk/pull/3/commits
+**Commit**: [Filters ToolBar](https://github.com/sindhurani29/PrivacyDesk/pull/3/commits)
 
 Screenshots (assistant + resulting UI) are recommended in `/docs/screenshots`.
 
@@ -191,7 +191,7 @@ npm run preview   # preview the production build locally
 ### New Request — Step 3 (Confirm)
 ![alt text](<docs/stepper 3.png>)
 ### Requested created with notification
-![alt text](<docs/case created.png>)
+![alt text](<docs/case created notif.png>)
 ### Case — Header & Overview (Status Badge, Owner, SLA)
 ![alt text](<docs/case details.png>)
 ### Case — Notes (add/delete note dialog)
