@@ -51,11 +51,30 @@ export default function SLAWidget({ submittedAt, dueAt }: SLAWidgetProps) {
   };
 
   return (
-    <section aria-label="SLA status" className="space-y-3 p-4">
-      <div className="space-y-2">
-        <div className="flex justify-between items-center text-sm">
-          <span className="font-medium text-gray-700">SLA Progress</span>
-          <span className="text-gray-500">{Math.round(progressPercentage)}%</span>
+    <section 
+      aria-label="SLA status" 
+      style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        padding: '16px',
+        minWidth: '200px',
+        maxWidth: '220px',
+        backgroundColor: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        position: 'relative'
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          fontSize: '14px' 
+        }}>
+          <span style={{ fontWeight: 500, color: '#374151' }}>SLA Progress</span>
+          <span style={{ color: '#6b7280' }}>{Math.round(progressPercentage)}%</span>
         </div>
         <ProgressBar
           value={progressPercentage}
@@ -70,14 +89,16 @@ export default function SLAWidget({ submittedAt, dueAt }: SLAWidgetProps) {
         />
       </div>
       
-      <div className="flex justify-center">
+      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
         <Badge
           themeColor={badgeProps.themeColor}
           size="medium"
           aria-live="polite"
           style={{
             fontWeight: 600,
-            fontSize: '12px'
+            fontSize: '12px',
+            position: 'relative',
+            zIndex: 1
           }}
         >
           {badgeProps.text}

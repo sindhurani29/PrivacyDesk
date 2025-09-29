@@ -156,11 +156,17 @@ Screenshots (assistant + resulting UI) are recommended in `/docs/screenshots`.
 ## Screenshots
 
 - `docs/requestGridPrompt.png`
+![alt text](docs/requestGridPrompt.png)
 - `docs/requestsPage.png`
+![alt text](docs/requestsPage.png)
 - `docs/wizardPrompt.png`
+![alt text](docs/wizardPrompt.png)
 - `docs/wizardOutput.png`
+![alt text](docs/wizardOutput.png)
 - `docs/filtersBar_prompt.png`
+![alt text](docs/filtersBar_prompt.png)
 - `docs/filtersBar.png`
+![alt text](docs/filtersBar.png)
 
 ## Scripts
 
@@ -169,3 +175,33 @@ npm run dev       # local development
 npm run build     # production build
 npm run preview   # preview the production build locally
 ```
+
+### Here are the final pages images of the application:
+
+### Login
+![alt text](docs/login.png)
+### Dashboard
+![alt text](docs/dashboard.png)
+### Requests — Grid & Filters
+![alt text](docs/request.png)
+### New Request — Step 1 (Requester)
+![alt text](<docs/stepper 1.png>)
+### New Request — Step 2 (Details)
+![alt text](<docs/stepper 2.png>)
+### New Request — Step 3 (Confirm)
+![alt text](<docs/stepper 3.png>)
+### Requested created with notification
+![alt text](<docs/case created.png>)
+### Case — Header & Overview (Status Badge, Owner, SLA)
+![alt text](<docs/case details.png>)
+### Case — Notes (add/delete note dialog)
+![alt text](docs/notes.png)
+### Case — Evidence
+![alt text](docs/evidence.png)
+### Case — History
+![alt text](docs/history.png)
+### Export — Print & JSON
+![alt text](<docs/case summary and export.png>)
+![alt text](docs/print.png)
+### Settings — SLA per Request Type
+![alt text](docs/settings.png)

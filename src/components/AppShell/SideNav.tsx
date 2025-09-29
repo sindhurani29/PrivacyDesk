@@ -1,5 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Drawer } from '@progress/kendo-react-layout';
+import { useLocation, Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 
 interface NavItem {
@@ -37,7 +36,6 @@ const items: NavItem[] = [
 ];
 
 export default function SideNav() {
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -60,35 +58,56 @@ export default function SideNav() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const drawerItems = items.map((item) => ({
-    text: item.text,
-    id: item.id,
-    icon: item.icon,
-    selected: isActiveRoute(item.route),
-    'aria-label': `Navigate to ${item.text}`,
-    title: item.text
-  }));
-
+  // Alternative approach: Custom navigation list instead of Kendo Drawer
   return (
-    <div ref={drawerRef} role="navigation" aria-label="Main navigation">
-      <Drawer
-        expanded={true}
-        position="start"
-        mode="push"
-        mini={false}
-        items={drawerItems}
-        onSelect={(e) => {
-          const selectedItem = items.find(item => item.id === e.itemTarget.id);
-          if (selectedItem) {
-            navigate(selectedItem.route);
-          }
-        }}
-        style={{
-          width: '256px',
-          backgroundColor: '#fff',
-          borderRight: '1px solid #e6eaf1'
-        }}
-      />
+    <div 
+      ref={drawerRef} 
+      role="navigation" 
+      aria-label="Main navigation"
+      style={{
+        width: '256px',
+        backgroundColor: '#fff',
+        borderRight: '1px solid #e6eaf1',
+        padding: '16px 0'
+      }}
+    >
+      <nav>
+        {items.map((item) => (
+          <Link
+            key={item.id}
+            to={item.route}
+            className={`nav-item ${isActiveRoute(item.route) ? 'active' : ''}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '12px 16px',
+              margin: '4px 8px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              color: isActiveRoute(item.route) ? '#2563eb' : '#374151',
+              backgroundColor: isActiveRoute(item.route) ? '#e7f0ff' : 'transparent',
+              fontWeight: isActiveRoute(item.route) ? 600 : 400,
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => {
+              if (!isActiveRoute(item.route)) {
+                e.currentTarget.style.backgroundColor = '#f1f5f9';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!isActiveRoute(item.route)) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+          >
+            <span style={{ marginRight: '12px', fontSize: '16px' }}>
+              {item.icon}
+            </span>
+            <span>{item.text}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

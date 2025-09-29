@@ -98,7 +98,16 @@ export default function CasePage() {
       </div>
 
       {/* Header */}
-      <div className="k-toolbar k-toolbar-resizable pd-card" role="toolbar" aria-label="Case Header" style={{ padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+      <div className="k-toolbar k-toolbar-resizable pd-card" role="toolbar" aria-label="Case Header" style={{ 
+        padding: 16, 
+        marginBottom: 16, 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 16, 
+        minWidth: 0,
+        overflow: 'hidden',
+        flexWrap: 'nowrap'
+      }}>
         <h1 style={{ 
           fontSize: 24, 
           fontWeight: 700, 
@@ -149,11 +158,11 @@ export default function CasePage() {
           />
         </div>
 
-        <div style={{ flex: '0 0 auto' }}>
+        <div style={{ flex: '0 0 auto', maxWidth: '220px' }}>
           <SLAWidget submittedAt={req.submittedAt} dueAt={req.dueAt} />
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, flex: '0 0 auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, flex: '0 0 auto', minWidth: 'fit-content' }}>
           <Button onClick={() => setShowExport(true)} aria-label="Export case">Export</Button>
           <Button themeColor="primary" onClick={() => setShowClose(true)} aria-label="Open Close Request dialog">
             Close Request

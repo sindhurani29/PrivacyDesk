@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Grid, GridColumn as Column } from '@progress/kendo-react-grid';
-import { Button } from '@progress/kendo-react-buttons';
 import { Badge } from '@progress/kendo-react-indicators';
 import type { DsrRequest } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
@@ -161,20 +160,6 @@ export default function RequestGrid({
         <AnyColumn field="owner" title="Owner" width="100px" 
           cell={(p: any) => <td style={{ padding: '4px 8px' }}><span className="text-sm">{p.dataItem.owner || '-'}</span></td>}
         />
-        <AnyColumn title="Actions" width="80px" cell={(p: any) => (
-          <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-            <Button
-              fillMode="flat"
-              themeColor="primary"
-              title="Open"
-              aria-label={`Open ${p.dataItem.id}`}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/case/${p.dataItem.id}`); }}
-              style={{ padding: '2px 6px', minWidth: 'auto', fontSize: 12 }}
-            >
-              Open
-            </Button>
-          </td>
-        )} />
       </Grid>
 
       {/* Empty state handled by parent component */}
