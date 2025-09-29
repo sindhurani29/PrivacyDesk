@@ -1,16 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Grid, GridColumn as Column } from '@progress/kendo-react-grid';
 import { Button } from '@progress/kendo-react-buttons';
-import { Dialog, DialogActionsBar } from '@progress/kendo-react-dialogs';
+import { Badge } from '@progress/kendo-react-indicators';
 import type { DsrRequest } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDate } from '../../lib/date';
-
-function StatusPill({ status }: { status: DsrRequest['status'] }) {
-  const cls = status === 'done' ? 'green' : status === 'rejected' ? 'red' : status === 'waiting' ? 'yellow' : status === 'in_progress' ? 'blue' : 'gray';
-  const label = status.replace('_', ' ');
-  return <span className={`pill ${cls}`}>{label}</span>;
-}
 
 export default function RequestGrid({ 
   data, 
@@ -21,7 +15,6 @@ export default function RequestGrid({
 }) {
   const [page, setPage] = useState({ skip: 0, take: 10 });
   const [sort, setSort] = useState<any[]>([{ field: 'submittedAt', dir: 'desc' }]);
-  const [preview, setPreview] = useState<DsrRequest | null>(null);
   const AnyColumn: any = Column;
   const navigate = useNavigate();
 
@@ -73,32 +66,10 @@ export default function RequestGrid({
     });
   }, [currentPage, totalPages, totalItems, page.take, onPaginationChange]);
 
-  // Inline Eye icon to avoid reliance on Kendo font icons which may be blocked/missing
-  const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      focusable="false"
-      {...props}
-    >
-      <path
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        fill="none"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    </svg>
-  );
-
   return (
-    <>
+    <div className="compact-grid-wrapper">
       <Grid
-        className="pd-grid"
+        className="pd-grid pd-grid-compact k-grid-compact"
         data={paginatedData}
         skip={page.skip}
         take={page.take}
@@ -115,70 +86,98 @@ export default function RequestGrid({
         onPageChange={handlePageChange}
         onSortChange={handleSortChange}
         onRowClick={(e) => navigate(`/case/${e.dataItem.id}`)}
-        style={{ fontSize: 13, lineHeight: 1.3, minHeight: '450px' }}
+        style={{ fontSize: 12, lineHeight: 1.2, minHeight: '450px' }}
       >
-        <AnyColumn field="id" title="ID" cell={(p: any) => (
-          <td>
-            <Link className="link" to={`/case/${p.dataItem.id}`} onClick={(e) => e.stopPropagation()}>
+        <AnyColumn field="id" title="ID" width="120px" cell={(p: any) => (
+          <td style={{ padding: '4px 8px' }}>
+            <Link className="link text-sm" to={`/case/${p.dataItem.id}`} onClick={(e) => e.stopPropagation()}>
               {p.dataItem.id}
             </Link>
           </td>
         )} />
-        <AnyColumn field="type" title="Type" cell={(p: any) => {
+        <AnyColumn field="type" title="Type" width="100px" cell={(p: any) => {
           const t = p.dataItem.type as DsrRequest['type'];
           const color = t === 'export' ? 'green' : t === 'access' ? 'blue' : t === 'delete' ? 'red' : 'yellow';
-          return <td><span className={`pill ${color}`}>{t}</span></td>;
+          return <td style={{ padding: '4px 8px' }}><span className={`pill ${color} text-xs`}>{t}</span></td>;
         }} />
-        <Column field="requester.email" title="Requester Email" />
+        <AnyColumn field="requester.email" title="Requester Email" width="200px" 
+          cell={(p: any) => <td style={{ padding: '4px 8px' }}><span className="text-sm">{p.dataItem.requester.email}</span></td>}
+        />
         <AnyColumn
           field="submittedAt"
           title="Submitted"
+          width="120px"
           headerCell={() => (
             <th>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#64748b', fontWeight: 600 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#64748b', fontWeight: 600, fontSize: 12 }}>
                 Submitted
-        <span aria-hidden="true" style={{ color: '#111827' }}>{(sort.find(s => s.field === 'submittedAt')?.dir ?? 'desc') === 'desc' ? '↓' : '↑'}</span>
+                <span aria-hidden="true" style={{ color: '#111827' }}>{(sort.find(s => s.field === 'submittedAt')?.dir ?? 'desc') === 'desc' ? '↓' : '↑'}</span>
               </span>
             </th>
           )}
-      cell={(p: any) => <td>{formatDate(p.dataItem.submittedAt)}</td>}
+          cell={(p: any) => <td style={{ padding: '4px 8px' }}><span className="text-sm">{formatDate(p.dataItem.submittedAt)}</span></td>}
         />
-        <AnyColumn field="dueAt" title="Due" cell={(p: any) => {
+        <AnyColumn field="dueAt" title="Due" width="140px" cell={(p: any) => {
           const now = new Date();
           const due = new Date(p.dataItem.dueAt);
           const days = Math.ceil((+due - +now) / (1000*60*60*24));
           const over = days < 0;
           const label = over ? `Overdue ${Math.abs(days)}d` : `Due in ${days}d`;
-          return <td><span className={`pill ${over ? 'red' : days <= 3 ? 'yellow' : 'gray'}`}>{label}</span></td>;
+          return <td style={{ padding: '4px 8px' }}><span className={`pill ${over ? 'red' : days <= 3 ? 'yellow' : 'gray'} text-xs`}>{label}</span></td>;
         }} />
-  <AnyColumn field="status" title="Status" cell={(p: any) => <td><StatusPill status={p.dataItem.status} /></td>} />
-        <Column field="owner" title="Owner" />
-    <AnyColumn title="Actions" cell={(p: any) => (
-          <td>
+        <AnyColumn field="status" title="Status" width="120px" cell={(p: any) => {
+          const status = p.dataItem.status as DsrRequest['status'];
+          let themeColor: 'success' | 'error' | 'warning' | 'info' | 'primary' | 'secondary' = 'secondary';
+          
+          switch (status) {
+            case 'done':
+              themeColor = 'success';
+              break;
+            case 'rejected':
+              themeColor = 'error';
+              break;
+            case 'waiting':
+              themeColor = 'warning';
+              break;
+            case 'in_progress':
+              themeColor = 'info';
+              break;
+            case 'new':
+            default:
+              themeColor = 'secondary';
+              break;
+          }
+          
+          return (
+            <td style={{ padding: '4px 8px' }}>
+              <div className="flex items-center justify-center">
+                <Badge themeColor={themeColor} size="small">
+                  {status.replace('_', ' ')}
+                </Badge>
+              </div>
+            </td>
+          );
+        }} />
+        <AnyColumn field="owner" title="Owner" width="100px" 
+          cell={(p: any) => <td style={{ padding: '4px 8px' }}><span className="text-sm">{p.dataItem.owner || '-'}</span></td>}
+        />
+        <AnyColumn title="Actions" width="80px" cell={(p: any) => (
+          <td style={{ padding: '4px 8px', textAlign: 'center' }}>
             <Button
-              fillMode="outline"
-              themeColor="base"
-              title="Preview"
-              aria-label={`Preview ${p.dataItem.id}`}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPreview(p.dataItem); }}
-              style={{ padding: '4px 8px' }}
+              fillMode="flat"
+              themeColor="primary"
+              title="Open"
+              aria-label={`Open ${p.dataItem.id}`}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/case/${p.dataItem.id}`); }}
+              style={{ padding: '2px 6px', minWidth: 'auto', fontSize: 12 }}
             >
-      <EyeIcon />
+              Open
             </Button>
           </td>
         )} />
       </Grid>
 
-  {data.length === 0 && null}
-
-      {preview && (
-  <Dialog title={`Request ${preview.id}`} onClose={() => setPreview(null)}>
-          <pre>{JSON.stringify(preview, null, 2)}</pre>
-          <DialogActionsBar>
-            <Button onClick={() => setPreview(null)}>Close</Button>
-          </DialogActionsBar>
-        </Dialog>
-      )}
-    </>
+      {/* Empty state handled by parent component */}
+    </div>
   );
 }

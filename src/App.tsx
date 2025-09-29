@@ -2,6 +2,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import TopBar from './components/AppShell/TopBar';
 import SideNav from './components/AppShell/SideNav';
 import AppRoutes from './router';
+import { Toaster } from './components/Common/Toaster';
 import './index.css';
 import './App.css';
 
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppContent />
+      <Toaster />
     </BrowserRouter>
   );
 }

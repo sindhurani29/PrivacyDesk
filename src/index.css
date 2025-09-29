@@ -300,6 +300,18 @@ p.muted { color: var(--pd-muted); margin-top: 4px; }
   box-shadow: inset 0 0 0 1px var(--pd-border); 
 }
 
+/* Compact grid styling for visual density */
+.pd-grid-compact .k-grid .k-table-tbody td {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pd-grid-compact .k-grid .k-table-thead th {
+  padding: 10px 12px;
+  font-size: 11px;
+}
+
 /* ID column styling */
 .pd-grid .k-grid .k-table-tbody td:first-child a.link {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;

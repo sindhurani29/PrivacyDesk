@@ -1,37 +1,52 @@
 import { DropDownList, MultiSelect } from '@progress/kendo-react-dropdowns';
-import { Input } from '@progress/kendo-react-inputs';
+import { DatePicker } from '@progress/kendo-react-dateinputs';
 import { Button } from '@progress/kendo-react-buttons';
+import type { DropDownListChangeEvent, MultiSelectChangeEvent } from '@progress/kendo-react-dropdowns';
+import type { DatePickerChangeEvent } from '@progress/kendo-react-dateinputs';
 
 type FilterType = 'access'|'delete'|'export'|'correct'|'all';
 type FilterStatus = 'new'|'in_progress'|'waiting'|'done'|'rejected'|'all';
 
 export default function FiltersBar({
-  search, setSearch, type, setType, status, setStatus, owner, setOwner, owners, onClear
+  type, setType, status, setStatus, owner, setOwner, dateFrom, setDateFrom, dateTo, setDateTo
 }: {
-  search: string; setSearch: (v: string) => void;
   type: FilterType; setType: (v: FilterType) => void;
   status: FilterStatus; setStatus: (v: FilterStatus) => void;
   owner: string[]; setOwner: (v: string[]) => void;
-  owners: string[]; onClear: () => void;
+  dateFrom: Date | null; setDateFrom: (v: Date | null) => void;
+  dateTo: Date | null; setDateTo: (v: Date | null) => void;
 }) {
-  const hasActiveFilters = search || type !== 'all' || status !== 'all' || owner.length > 0;
+  const availableOwners = ['Alex', 'Priya', 'Jordan', 'Sam', 'Taylor'];
+  
+  const hasActiveFilters = type !== 'all' || status !== 'all' || owner.length > 0 || dateFrom || dateTo;
+
+  // Debug log to check if component is rendering
+  console.log('FiltersBar rendering with props:', { type, status, owner, dateFrom, dateTo });
+
+  const handleClearAll = () => {
+    setType('all');
+    setStatus('all');
+    setOwner([]);
+    setDateFrom(null);
+    setDateTo(null);
+  };
 
   return (
-    <div className="pd-card" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="pd-card" style={{ padding: '20px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <svg style={{ width: '20px', height: '20px', color: '#6b7280' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
           </svg>
-          <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: 0 }}>Filters</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#374151', margin: 0 }}>Filters</h3>
           {hasActiveFilters && (
             <span style={{
-              backgroundColor: '#e7f0ff',
-              color: 'var(--pd-primary)',
+              backgroundColor: '#dbeafe',
+              color: '#1e40af',
               fontSize: '12px',
               fontWeight: 500,
-              padding: '2px 8px',
-              borderRadius: '12px'
+              padding: '4px 10px',
+              borderRadius: '16px'
             }}>
               Active
             </span>
@@ -39,10 +54,11 @@ export default function FiltersBar({
         </div>
         <Button
           fillMode="flat"
-          onClick={onClear}
+          onClick={handleClearAll}
           style={{ 
-            fontSize: '14px', 
-            color: hasActiveFilters ? '#374151' : '#9ca3af'
+            fontSize: '14px',
+            color: hasActiveFilters ? '#374151' : '#9ca3af',
+            fontWeight: '500'
           }}
           disabled={!hasActiveFilters}
         >
@@ -51,33 +67,16 @@ export default function FiltersBar({
       </div>
       
       <div style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap',
-        gap: 16 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '20px',
+        alignItems: 'end'
       }}>
-        <div style={{ flex: '1', minWidth: '240px' }}>
+        <div>
           <label style={{ 
             display: 'block', 
             fontSize: '14px', 
-            fontWeight: 500, 
-            color: '#374151',
-            marginBottom: '8px'
-          }}>
-            Search Email
-          </label>
-          <Input 
-            value={search} 
-            onChange={(e) => setSearch((e.value as string) ?? '')} 
-            placeholder="Search by email..." 
-            style={{ width: '100%' }}
-          />
-        </div>
-        
-        <div style={{ flex: '1', minWidth: '240px' }}>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '14px', 
-            fontWeight: 500, 
+            fontWeight: '500', 
             color: '#374151',
             marginBottom: '8px'
           }}>
@@ -100,16 +99,16 @@ export default function FiltersBar({
               { text: 'Export Request', value: 'export' },
               { text: 'Correction Request', value: 'correct' }
             ].find(item => item.value === type)} 
-            onChange={e => setType((e.value?.value as FilterType) ?? 'all')}
+            onChange={(e: DropDownListChangeEvent) => setType((e.value?.value as FilterType) ?? 'all')}
             style={{ width: '100%' }}
           />
         </div>
         
-        <div style={{ flex: '1', minWidth: '240px' }}>
+        <div>
           <label style={{ 
             display: 'block', 
             fontSize: '14px', 
-            fontWeight: 500, 
+            fontWeight: '500', 
             color: '#374151',
             marginBottom: '8px'
           }}>
@@ -134,27 +133,63 @@ export default function FiltersBar({
               { text: 'Done', value: 'done' },
               { text: 'Rejected', value: 'rejected' }
             ].find(item => item.value === status)} 
-            onChange={e => setStatus((e.value?.value as FilterStatus) ?? 'all')}
+            onChange={(e: DropDownListChangeEvent) => setStatus((e.value?.value as FilterStatus) ?? 'all')}
             style={{ width: '100%' }}
           />
         </div>
         
-        <div style={{ flex: '1', minWidth: '240px' }}>
+        <div>
           <label style={{ 
             display: 'block', 
             fontSize: '14px', 
-            fontWeight: 500, 
+            fontWeight: '500', 
             color: '#374151',
             marginBottom: '8px'
           }}>
             Owner
           </label>
           <MultiSelect 
-            data={owners} 
+            data={availableOwners} 
             value={owner} 
-            onChange={e => setOwner((e.value as string[]) ?? [])} 
+            onChange={(e: MultiSelectChangeEvent) => setOwner((e.value as string[]) ?? [])} 
             placeholder="Select owners..." 
             style={{ width: '100%' }}
+          />
+        </div>
+
+        <div>
+          <label style={{ 
+            display: 'block', 
+            fontSize: '14px', 
+            fontWeight: '500', 
+            color: '#374151',
+            marginBottom: '8px'
+          }}>
+            From Date
+          </label>
+          <DatePicker
+            value={dateFrom}
+            onChange={(e: DatePickerChangeEvent) => setDateFrom((e.value as Date) ?? null)}
+            style={{ width: '100%' }}
+            placeholder="Select start date"
+          />
+        </div>
+
+        <div>
+          <label style={{ 
+            display: 'block', 
+            fontSize: '14px', 
+            fontWeight: '500', 
+            color: '#374151',
+            marginBottom: '8px'
+          }}>
+            To Date
+          </label>
+          <DatePicker
+            value={dateTo}
+            onChange={(e: DatePickerChangeEvent) => setDateTo((e.value as Date) ?? null)}
+            style={{ width: '100%' }}
+            placeholder="Select end date"
           />
         </div>
       </div>

@@ -7,10 +7,11 @@ import { useNavigate } from 'react-router-dom';
 
 export default function RequestsPage() {
   const { requests, load } = useRequestsStore();
-  const [search, setSearch] = useState('');
   const [type, setType] = useState<'access'|'delete'|'export'|'correct'|'all'>('all');
   const [status, setStatus] = useState<'new'|'in_progress'|'waiting'|'done'|'rejected'|'all'>('all');
   const [owner, setOwner] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
+  const [dateTo, setDateTo] = useState<Date | null>(null);
   const [paginationInfo, setPaginationInfo] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -22,22 +23,25 @@ export default function RequestsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const owners = useMemo(() => Array.from(new Set(requests.map(r => r.owner).filter(Boolean))) as string[], [requests]);
-
   const filtered = useMemo(() => {
-    return requests.filter(r =>
-      (search.trim().length === 0 || r.requester.email.toLowerCase().includes(search.toLowerCase())) &&
-      (type === 'all' || r.type === type) &&
-      (status === 'all' || r.status === status) &&
-      (owner.length === 0 || (r.owner && owner.includes(r.owner)))
-    );
-  }, [requests, search, type, status, owner]);
+    return requests.filter(r => {
+      // Date filtering
+      if (dateFrom && new Date(r.submittedAt) < dateFrom) return false;
+      if (dateTo && new Date(r.submittedAt) > dateTo) return false;
+      
+      // Other filters
+      return (type === 'all' || r.type === type) &&
+             (status === 'all' || r.status === status) &&
+             (owner.length === 0 || (r.owner && owner.includes(r.owner)));
+    });
+  }, [requests, type, status, owner, dateFrom, dateTo]);
 
   const clearFilters = () => { 
-    setSearch(''); 
     setType('all'); 
     setStatus('all'); 
-    setOwner([]); 
+    setOwner([]);
+    setDateFrom(null);
+    setDateTo(null);
   };
 
   // Calculate display ranges for pagination info
@@ -67,16 +71,16 @@ export default function RequestsPage() {
 
       <div className="mt-16">
         <FiltersBar
-          search={search}
-          setSearch={setSearch}
-          type={type as any}
-          setType={setType as any}
-          status={status as any}
-          setStatus={setStatus as any}
+          type={type}
+          setType={setType}
+          status={status}
+          setStatus={setStatus}
           owner={owner}
           setOwner={setOwner}
-          owners={owners}
-          onClear={clearFilters}
+          dateFrom={dateFrom}
+          setDateFrom={setDateFrom}
+          dateTo={dateTo}
+          setDateTo={setDateTo}
         />
       </div>
 
